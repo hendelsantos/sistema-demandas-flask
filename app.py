@@ -34,6 +34,14 @@ class Demanda(db.Model):
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     data_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
+    # Datas de follow-up para cada etapa do processo
+    data_aberto = db.Column(db.DateTime, default=datetime.utcnow)  # Data que foi criada (Aberto)
+    data_em_cotacao = db.Column(db.DateTime)  # Data que entrou em cotação
+    data_cotacao_aprovada = db.Column(db.DateTime)  # Data que a cotação foi aprovada
+    data_po_emitido = db.Column(db.DateTime)  # Data que o PO foi emitido
+    data_produto_recebido = db.Column(db.DateTime)  # Data que o produto foi recebido
+    data_nf_recebida = db.Column(db.DateTime)  # Data que a NF foi recebida
+    
     # Relacionamentos
     arquivos = db.relationship('ArquivoDemanda', backref='demanda', lazy=True, cascade='all, delete-orphan')
     pedido = db.relationship('Pedido', backref='demanda', uselist=False, cascade='all, delete-orphan')
@@ -187,8 +195,22 @@ def atualizar_status(id):
     demanda = Demanda.query.get_or_404(id)
     novo_status = request.form['status']
     
+    # Atualizar data específica baseada no novo status
+    agora = datetime.utcnow()
+    
+    if novo_status == 'Em Cotação' and not demanda.data_em_cotacao:
+        demanda.data_em_cotacao = agora
+    elif novo_status == 'Cotação Aprovada' and not demanda.data_cotacao_aprovada:
+        demanda.data_cotacao_aprovada = agora
+    elif novo_status == 'PO Emitido' and not demanda.data_po_emitido:
+        demanda.data_po_emitido = agora
+    elif novo_status == 'Produto Recebido' and not demanda.data_produto_recebido:
+        demanda.data_produto_recebido = agora
+    elif novo_status == 'NF Recebida' and not demanda.data_nf_recebida:
+        demanda.data_nf_recebida = agora
+    
     demanda.status = novo_status
-    demanda.data_atualizacao = datetime.utcnow()
+    demanda.data_atualizacao = agora
     
     db.session.commit()
     flash(f'Status atualizado para: {novo_status}', 'success')
@@ -297,9 +319,12 @@ def novo_pedido(demanda_id):
         
         db.session.add(pedido)
         
-        # Atualizar status da demanda
+        # Atualizar status da demanda e data de follow-up
+        agora = datetime.utcnow()
         demanda.status = 'PO Emitido'
-        demanda.data_atualizacao = datetime.utcnow()
+        demanda.data_atualizacao = agora
+        if not demanda.data_po_emitido:
+            demanda.data_po_emitido = agora
         
         db.session.commit()
         
@@ -313,8 +338,16 @@ def novo_pedido(demanda_id):
 def confirmar_recebimento(pedido_id):
     pedido = Pedido.query.get_or_404(pedido_id)
     
-    pedido.data_recebimento = datetime.utcnow()
+    agora = datetime.utcnow()
+    pedido.data_recebimento = agora
     pedido.valor_recebido = float(request.form['valor_recebido']) if request.form['valor_recebido'] else pedido.valor_total
+    
+    # Atualizar data de follow-up da demanda
+    demanda = pedido.demanda
+    if not demanda.data_produto_recebido:
+        demanda.data_produto_recebido = agora
+        demanda.status = 'Produto Recebido'
+        demanda.data_atualizacao = agora
     
     db.session.commit()
     
@@ -326,14 +359,17 @@ def confirmar_recebimento(pedido_id):
 def confirmar_recebimento_nf(pedido_id):
     pedido = Pedido.query.get_or_404(pedido_id)
     
+    agora = datetime.utcnow()
     # Atualizar dados da Nota Fiscal
     pedido.numero_nota_fiscal = request.form['numero_nota_fiscal']
-    pedido.data_recebimento_nf = datetime.utcnow()
+    pedido.data_recebimento_nf = agora
     
-    # Atualizar status da demanda para "NF Recebida"
+    # Atualizar status da demanda para "NF Recebida" e data de follow-up
     demanda = pedido.demanda
     demanda.status = 'NF Recebida'
-    demanda.data_atualizacao = datetime.utcnow()
+    demanda.data_atualizacao = agora
+    if not demanda.data_nf_recebida:
+        demanda.data_nf_recebida = agora
     
     db.session.commit()
     
@@ -409,6 +445,73 @@ def api_metricas_chart():
         'previstos': previstos,
         'recebidos': recebidos
     })
+
+# Função helper para formatar data no template
+@app.template_filter('format_date')
+def format_date(date):
+    if date:
+        return date.strftime('%d/%m/%Y às %H:%M')
+    return 'Não informado'
+
+# Função helper para obter histórico de follow-up
+def obter_historico_followup(demanda):
+    """Retorna lista ordenada com o histórico de follow-up da demanda"""
+    historico = []
+    
+    if demanda.data_aberto:
+        historico.append({
+            'status': 'Aberto',
+            'data': demanda.data_aberto,
+            'icone': 'fa-plus-circle',
+            'cor': 'primary'
+        })
+    
+    if demanda.data_em_cotacao:
+        historico.append({
+            'status': 'Em Cotação',
+            'data': demanda.data_em_cotacao,
+            'icone': 'fa-search-dollar',
+            'cor': 'warning'
+        })
+    
+    if demanda.data_cotacao_aprovada:
+        historico.append({
+            'status': 'Cotação Aprovada',
+            'data': demanda.data_cotacao_aprovada,
+            'icone': 'fa-check-circle',
+            'cor': 'info'
+        })
+    
+    if demanda.data_po_emitido:
+        historico.append({
+            'status': 'PO Emitido',
+            'data': demanda.data_po_emitido,
+            'icone': 'fa-file-invoice',
+            'cor': 'primary'
+        })
+    
+    if demanda.data_produto_recebido:
+        historico.append({
+            'status': 'Produto Recebido',
+            'data': demanda.data_produto_recebido,
+            'icone': 'fa-box-open',
+            'cor': 'success'
+        })
+    
+    if demanda.data_nf_recebida:
+        historico.append({
+            'status': 'NF Recebida',
+            'data': demanda.data_nf_recebida,
+            'icone': 'fa-receipt',
+            'cor': 'success'
+        })
+    
+    # Ordenar por data
+    historico.sort(key=lambda x: x['data'])
+    return historico
+
+# Disponibilizar função para templates
+app.jinja_env.globals.update(obter_historico_followup=obter_historico_followup)
 
 def criar_usuario_admin():
     """Criar usuário admin padrão se não existir"""
