@@ -99,8 +99,8 @@ def admin_required(f):
 # Rotas principais
 @app.route('/')
 def index():
-    # Permitir acesso à home sem login
-    return render_template('index.html')
+    # Home agora é a lista de demandas
+    return redirect(url_for('listar_demandas'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
