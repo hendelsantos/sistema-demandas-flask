@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Login - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-header text-center bg-primary text-white">
+                <h4><i class="fas fa-sign-in-alt"></i> Login</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-user"></i></span>
+                            <input type="text" class="form-control" id="username" name="username" required>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                            <input type="password" class="form-control" id="password" name="password" required>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-sign-in-alt"></i> Entrar
+                        </button>
+                        <a href="/" class="btn btn-outline-secondary">
+                            <i class="fas fa-home"></i> Voltar à Home
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Informações sobre Acesso</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user-shield text-danger"></i> Administrador</h6>
+                        <ul class="text-start">
+                            <li>Criar, editar e deletar demandas</li>
+                            <li>Atualizar status das demandas</li>
+                            <li>Gerenciar pedidos e recebimentos</li>
+                            <li>Visualizar todas as métricas</li>
+                            <li>Acesso completo ao sistema</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-user text-primary"></i> Usuário Comum</h6>
+                        <ul class="text-start">
+                            <li>Criar novas demandas</li>
+                            <li>Visualizar demandas existentes</li>
+                            <li>Anexar documentos</li>
+                            <li>Visualizar métricas</li>
+                            <li>Acesso somente leitura para pedidos</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Focar no campo de usuário quando carregar a página
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('username').focus();
+    });
+    
+    // Validação simples do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        
+        if (!username || !password) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

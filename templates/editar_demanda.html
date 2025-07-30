@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+
+{% block title %}Editar Demanda #{{ demanda.id }} - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-edit"></i> Editar Demanda #{{ demanda.id }}</h2>
+            <a href="{{ url_for('detalhes_demanda', id=demanda.id) }}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Edição de Demanda</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="solicitante" class="form-label">Nome do Solicitante *</label>
+                                <input type="text" class="form-control" id="solicitante" name="solicitante" 
+                                       value="{{ demanda.solicitante }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quantidade" class="form-label">Quantidade *</label>
+                                <input type="number" class="form-control" id="quantidade" name="quantidade" 
+                                       value="{{ demanda.quantidade }}" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao_item" class="form-label">Descrição do Item *</label>
+                        <textarea class="form-control" id="descricao_item" name="descricao_item" rows="3" required>{{ demanda.descricao_item }}</textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="catalog" class="form-label">Catálogo (Opcional)</label>
+                        <input type="text" class="form-control" id="catalog" name="catalog" 
+                               value="{{ demanda.catalog or '' }}" placeholder="Número do catálogo ou referência do fornecedor">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="onde_utilizado" class="form-label">Onde será utilizado *</label>
+                        <input type="text" class="form-control" id="onde_utilizado" name="onde_utilizado" 
+                               value="{{ demanda.onde_utilizado }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="justificativa" class="form-label">Justificativa *</label>
+                        <textarea class="form-control" id="justificativa" name="justificativa" rows="4" required>{{ demanda.justificativa }}</textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('detalhes_demanda', id=demanda.id) }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Salvar Alterações
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Informações da Demanda</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Status Atual:</strong> 
+                            {% if demanda.status == 'Aberto' %}
+                                <span class="badge bg-warning text-dark">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'Em Cotação' %}
+                                <span class="badge bg-info">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'PR Criada' %}
+                                <span class="badge bg-secondary">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'PO Emitido' %}
+                                <span class="badge bg-success">{{ demanda.status }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Data Criação:</strong> {{ demanda.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Última Atualização:</strong> {{ demanda.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p><strong>Arquivos Anexados:</strong> {{ demanda.arquivos|length }} arquivo(s)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const solicitante = document.getElementById('solicitante').value.trim();
+        const descricao = document.getElementById('descricao_item').value.trim();
+        const quantidade = document.getElementById('quantidade').value;
+        const ondeUtilizado = document.getElementById('onde_utilizado').value.trim();
+        const justificativa = document.getElementById('justificativa').value.trim();
+        
+        if (!solicitante || !descricao || !quantidade || !ondeUtilizado || !justificativa) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        if (parseInt(quantidade) < 1) {
+            e.preventDefault();
+            alert('A quantidade deve ser maior que zero.');
+            return false;
+        }
+        
+        // Confirmação antes de salvar
+        if (!confirm('Confirma as alterações na demanda?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+</script>
+{% endblock %}

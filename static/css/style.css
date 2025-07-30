@@ -1,0 +1,282 @@
+/* Estilos personalizados para o Sistema de Controle de Demandas */
+
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Navbar customizada */
+.navbar-brand {
+    font-weight: bold;
+    font-size: 1.5rem;
+}
+
+.navbar-nav .nav-link {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.navbar-nav .nav-link:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+}
+
+/* Cards com sombra suave */
+.card {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border: 1px solid rgba(0, 0, 0, 0.125);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* Badges personalizados */
+.badge {
+    font-size: 0.75em;
+    font-weight: 500;
+}
+
+/* Botões com animação */
+.btn {
+    transition: all 0.2s ease-in-out;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Jumbotron personalizado */
+.jumbotron {
+    background: linear-gradient(135deg, var(--primary-color), #0056b3);
+}
+
+/* Timeline para status */
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 20px;
+}
+
+.timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -30px;
+    top: 0;
+    bottom: -20px;
+    width: 2px;
+    background-color: #e9ecef;
+}
+
+.timeline-item:last-child::before {
+    bottom: 0;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -36px;
+    top: 4px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background-color: #e9ecef;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 1px #dee2e6;
+}
+
+.timeline-item.active .timeline-marker {
+    background-color: var(--warning-color);
+    box-shadow: 0 0 0 1px var(--warning-color);
+}
+
+.timeline-item.completed .timeline-marker {
+    background-color: var(--success-color);
+    box-shadow: 0 0 0 1px var(--success-color);
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.timeline-content small {
+    color: #6c757d;
+}
+
+/* Tabelas responsivas */
+.table-responsive {
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.table th {
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.5px;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+/* Formulários */
+.form-label {
+    font-weight: 600;
+    color: #495057;
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Alertas */
+.alert {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+/* Footer */
+footer {
+    border-top: 1px solid #dee2e6;
+    margin-top: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .jumbotron h1 {
+        font-size: 2rem;
+    }
+    
+    .btn-group .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.5rem;
+    }
+    
+    .timeline {
+        padding-left: 20px;
+    }
+    
+    .timeline-item {
+        padding-left: 15px;
+    }
+    
+    .timeline-item::before {
+        left: -20px;
+    }
+    
+    .timeline-marker {
+        left: -26px;
+        width: 12px;
+        height: 12px;
+    }
+}
+
+/* Cores customizadas para status */
+.btn-orange {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+    color: #fff;
+}
+
+.btn-orange:hover {
+    background-color: #e8690b;
+    border-color: #e8690b;
+    color: #fff;
+}
+
+.btn-outline-orange {
+    color: #fd7e14;
+    border-color: #fd7e14;
+}
+
+.btn-outline-orange:hover {
+    background-color: #fd7e14;
+    border-color: #fd7e14;
+    color: #fff;
+}
+
+/* Loading spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Animação para cards no dashboard */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card.animate {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+/* Estilo para upload de arquivos */
+.form-control[type="file"] {
+    padding: 0.375rem 0.75rem;
+}
+
+/* Tooltips personalizados */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+/* Progress bars */
+.progress {
+    height: 1.5rem;
+    border-radius: 0.5rem;
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}
+
+/* Highlight para dados importantes */
+.highlight {
+    background-color: rgba(255, 193, 7, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    border-left: 4px solid var(--warning-color);
+}
+
+/* Separadores visuais */
+.section-divider {
+    border-top: 2px solid #e9ecef;
+    margin: 2rem 0;
+    position: relative;
+}
+
+.section-divider::after {
+    content: '';
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 50px;
+    height: 2px;
+    background-color: var(--primary-color);
+}

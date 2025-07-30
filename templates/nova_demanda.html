@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Nova Demanda - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-plus"></i> Nova Demanda</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clipboard-list"></i> Cadastro de Demanda</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="solicitante" class="form-label">Nome do Solicitante *</label>
+                                <input type="text" class="form-control" id="solicitante" name="solicitante" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quantidade" class="form-label">Quantidade *</label>
+                                <input type="number" class="form-control" id="quantidade" name="quantidade" min="1" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="descricao_item" class="form-label">Descrição do Item *</label>
+                        <textarea class="form-control" id="descricao_item" name="descricao_item" rows="3" required 
+                                  placeholder="Descreva detalhadamente o item solicitado..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="catalog" class="form-label">Catálogo (Opcional)</label>
+                        <input type="text" class="form-control" id="catalog" name="catalog" 
+                               placeholder="Número do catálogo ou referência do fornecedor">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="onde_utilizado" class="form-label">Onde será utilizado *</label>
+                        <input type="text" class="form-control" id="onde_utilizado" name="onde_utilizado" required
+                               placeholder="Local ou setor onde o item será utilizado">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="justificativa" class="form-label">Justificativa *</label>
+                        <textarea class="form-control" id="justificativa" name="justificativa" rows="4" required
+                                  placeholder="Justifique a necessidade do item, urgência, impacto na operação, etc."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_demandas') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Salvar Demanda
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Informações Importantes</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Após criar a demanda, ela ficará com status <strong>"Aberto"</strong></li>
+                    <li>Você poderá anexar documentos PDF (cotações, especificações) na tela de detalhes</li>
+                    <li>O status será atualizado conforme o andamento do processo de compra</li>
+                    <li>Campos marcados com * são obrigatórios</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const solicitante = document.getElementById('solicitante').value.trim();
+        const descricao = document.getElementById('descricao_item').value.trim();
+        const quantidade = document.getElementById('quantidade').value;
+        const ondeUtilizado = document.getElementById('onde_utilizado').value.trim();
+        const justificativa = document.getElementById('justificativa').value.trim();
+        
+        if (!solicitante || !descricao || !quantidade || !ondeUtilizado || !justificativa) {
+            e.preventDefault();
+            alert('Por favor, preencha todos os campos obrigatórios.');
+            return false;
+        }
+        
+        if (parseInt(quantidade) < 1) {
+            e.preventDefault();
+            alert('A quantidade deve ser maior que zero.');
+            return false;
+        }
+    });
+</script>
+{% endblock %}

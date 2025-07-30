@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-tachometer-alt"></i> Dashboard</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ total_demandas }}</h4>
+                        <p class="mb-0">Total de Demandas</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-list fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas') }}" class="text-white text-decoration-none">
+                    Ver todas <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ demandas_abertas }}</h4>
+                        <p class="mb-0">Abertas</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas', status='Aberto') }}" class="text-white text-decoration-none">
+                    Ver abertas <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ demandas_cotacao }}</h4>
+                        <p class="mb-0">Em Cotação</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-search-dollar fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas', status='Em Cotação') }}" class="text-white text-decoration-none">
+                    Ver cotações <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ demandas_po }}</h4>
+                        <p class="mb-0">PO Emitido</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas', status='PO Emitido') }}" class="text-white text-decoration-none">
+                    Ver POs <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-pie"></i> Status das Demandas</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Ações Rápidas</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('nova_demanda') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Nova Demanda
+                    </a>
+                    <a href="{{ url_for('listar_demandas', status='Aberto') }}" class="btn btn-warning">
+                        <i class="fas fa-eye"></i> Ver Demandas Abertas
+                    </a>
+                    <a href="{{ url_for('listar_pedidos') }}" class="btn btn-info">
+                        <i class="fas fa-shopping-cart"></i> Gerenciar Pedidos
+                    </a>
+                    <a href="{{ url_for('metricas') }}" class="btn btn-success">
+                        <i class="fas fa-chart-line"></i> Ver Métricas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de pizza para status das demandas
+    const ctx = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Abertas', 'Em Cotação', 'PR Criada', 'PO Emitido'],
+            datasets: [{
+                data: [{{ demandas_abertas }}, {{ demandas_cotacao }}, {{ demandas_pr }}, {{ demandas_po }}],
+                backgroundColor: [
+                    '#ffc107',
+                    '#17a2b8',
+                    '#fd7e14',
+                    '#28a745'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

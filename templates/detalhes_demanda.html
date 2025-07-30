@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Demanda #{{ demanda.id }} - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2><i class="fas fa-clipboard-list"></i> Demanda #{{ demanda.id }}</h2>
+            <div>
+                <a href="{{ url_for('listar_demandas') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </a>
+                {% if session.is_admin %}
+                    <a href="{{ url_for('editar_demanda', id=demanda.id) }}" class="btn btn-warning">
+                        <i class="fas fa-edit"></i> Editar
+                    </a>
+                    {% if demanda.status == 'PO Emitido' and not demanda.pedido %}
+                        <a href="{{ url_for('novo_pedido', demanda_id=demanda.id) }}" class="btn btn-success">
+                            <i class="fas fa-shopping-cart"></i> Criar Pedido
+                        </a>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('deletar_demanda', id=demanda.id) }}" style="display: inline;" 
+                          onsubmit="return confirm('Tem certeza que deseja deletar esta demanda? Esta ação não pode ser desfeita.')">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Deletar
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Informações da Demanda</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Solicitante:</strong> {{ demanda.solicitante }}</p>
+                        <p><strong>Quantidade:</strong> {{ demanda.quantidade }}</p>
+                        <p><strong>Catálogo:</strong> {{ demanda.catalog or 'Não informado' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            {% if demanda.status == 'Aberto' %}
+                                <span class="badge bg-warning text-dark">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'Em Cotação' %}
+                                <span class="badge bg-info">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'PR Criada' %}
+                                <span class="badge bg-secondary">{{ demanda.status }}</span>
+                            {% elif demanda.status == 'PO Emitido' %}
+                                <span class="badge bg-success">{{ demanda.status }}</span>
+                            {% endif %}
+                        </p>
+                        <p><strong>Data Criação:</strong> {{ demanda.data_criacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                        <p><strong>Última Atualização:</strong> {{ demanda.data_atualizacao.strftime('%d/%m/%Y %H:%M') }}</p>
+                    </div>
+                </div>
+                
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <p><strong>Descrição do Item:</strong></p>
+                        <div class="alert alert-light">{{ demanda.descricao_item }}</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>Onde será utilizado:</strong></p>
+                        <div class="alert alert-light">{{ demanda.onde_utilizado }}</div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <p><strong>Justificativa:</strong></p>
+                        <div class="alert alert-light">{{ demanda.justificativa }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Seção de Arquivos -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-file-pdf"></i> Documentos Anexados</h5>
+            </div>
+            <div class="card-body">
+                {% if demanda.arquivos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Arquivo</th>
+                                    <th>Tipo</th>
+                                    <th>Data Upload</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for arquivo in demanda.arquivos %}
+                                <tr>
+                                    <td>{{ arquivo.nome_original }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ arquivo.tipo_arquivo }}</span>
+                                    </td>
+                                    <td>{{ arquivo.data_upload.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        <a href="{{ url_for('download_arquivo', arquivo_id=arquivo.id) }}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-download"></i> Download
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhum documento anexado ainda.</p>
+                {% endif %}
+                
+                <!-- Formulário para upload -->
+                <hr>
+                <h6>Anexar Novo Documento</h6>
+                <form method="POST" action="{{ url_for('upload_arquivo', demanda_id=demanda.id) }}" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <select name="tipo_arquivo" class="form-select" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="cotacao">Cotação</option>
+                                <option value="especificacao">Especificação</option>
+                                <option value="po">Purchase Order</option>
+                                <option value="nota_fiscal">Nota Fiscal</option>
+                                <option value="outro">Outro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="file" name="arquivo" class="form-control" accept=".pdf" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-upload"></i> Enviar
+                            </button>
+                        </div>
+                    </div>
+                    <small class="text-muted">Apenas arquivos PDF são permitidos.</small>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Controle de Status - Apenas Admin -->
+        {% if session.is_admin %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-tasks"></i> Controle de Status</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('atualizar_status', id=demanda.id) }}">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Atualizar Status</label>
+                        <select name="status" id="status" class="form-select">
+                            <option value="Aberto" {{ 'selected' if demanda.status == 'Aberto' else '' }}>Aberto</option>
+                            <option value="Em Cotação" {{ 'selected' if demanda.status == 'Em Cotação' else '' }}>Em Cotação</option>
+                            <option value="PR Criada" {{ 'selected' if demanda.status == 'PR Criada' else '' }}>PR Criada</option>
+                            <option value="PO Emitido" {{ 'selected' if demanda.status == 'PO Emitido' else '' }}>PO Emitido</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="fas fa-save"></i> Atualizar Status
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% else %}
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-eye"></i> Status Atual</h5>
+            </div>
+            <div class="card-body text-center">
+                {% if demanda.status == 'Aberto' %}
+                    <span class="badge bg-warning text-dark fs-6">{{ demanda.status }}</span>
+                {% elif demanda.status == 'Em Cotação' %}
+                    <span class="badge bg-info fs-6">{{ demanda.status }}</span>
+                {% elif demanda.status == 'PR Criada' %}
+                    <span class="badge bg-secondary fs-6">{{ demanda.status }}</span>
+                {% elif demanda.status == 'PO Emitido' %}
+                    <span class="badge bg-success fs-6">{{ demanda.status }}</span>
+                {% endif %}
+                <p class="text-muted mt-2 mb-0">
+                    <small>Apenas administradores podem alterar o status</small>
+                </p>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Timeline de Status -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-history"></i> Fluxo do Processo</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item {{ 'active' if demanda.status == 'Aberto' else 'completed' if demanda.status in ['Em Cotação', 'PR Criada', 'PO Emitido'] else '' }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Demanda Aberta</h6>
+                            <small>{{ demanda.data_criacao.strftime('%d/%m/%Y %H:%M') }}</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {{ 'active' if demanda.status == 'Em Cotação' else 'completed' if demanda.status in ['PR Criada', 'PO Emitido'] else '' }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>Em Cotação</h6>
+                            <small>Aguardando cotação</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {{ 'active' if demanda.status == 'PR Criada' else 'completed' if demanda.status == 'PO Emitido' else '' }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>PR Criada</h6>
+                            <small>Purchase Request</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {{ 'active' if demanda.status == 'PO Emitido' else '' }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>PO Emitido</h6>
+                            <small>Purchase Order</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if demanda.pedido %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-shopping-cart"></i> Pedido Associado</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>PO:</strong> {{ demanda.pedido.numero_po or 'N/A' }}</p>
+                <p><strong>Fornecedor:</strong> {{ demanda.pedido.fornecedor or 'N/A' }}</p>
+                <p><strong>Valor:</strong> 
+                    {% if demanda.pedido.valor_total %}
+                        R$ {{ "%.2f"|format(demanda.pedido.valor_total) }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                <p><strong>Previsão:</strong> {{ demanda.pedido.mes_previsto_recebimento or 'N/A' }}</p>
+                <a href="{{ url_for('listar_pedidos') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-eye"></i> Ver Detalhes
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Confirmação antes de atualizar status
+    document.querySelector('form[action*="atualizar_status"]').addEventListener('submit', function(e) {
+        const novoStatus = document.getElementById('status').value;
+        if (!confirm(`Confirma a alteração do status para "${novoStatus}"?`)) {
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}
