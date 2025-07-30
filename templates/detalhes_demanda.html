@@ -172,6 +172,7 @@
                             <option value="Em Cotação" {{ 'selected' if demanda.status == 'Em Cotação' else '' }}>Em Cotação</option>
                             <option value="PR Criada" {{ 'selected' if demanda.status == 'PR Criada' else '' }}>PR Criada</option>
                             <option value="PO Emitido" {{ 'selected' if demanda.status == 'PO Emitido' else '' }}>PO Emitido</option>
+                            <option value="NF Recebida" {{ 'selected' if demanda.status == 'NF Recebida' else '' }}>NF Recebida</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-success w-100">
@@ -209,7 +210,7 @@
             </div>
             <div class="card-body">
                 <div class="timeline">
-                    <div class="timeline-item {{ 'active' if demanda.status == 'Aberto' else 'completed' if demanda.status in ['Em Cotação', 'PR Criada', 'PO Emitido'] else '' }}">
+                    <div class="timeline-item {{ 'active' if demanda.status == 'Aberto' else 'completed' if demanda.status in ['Em Cotação', 'PR Criada', 'PO Emitido', 'NF Recebida'] else '' }}">
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h6>Demanda Aberta</h6>
@@ -217,7 +218,7 @@
                         </div>
                     </div>
                     
-                    <div class="timeline-item {{ 'active' if demanda.status == 'Em Cotação' else 'completed' if demanda.status in ['PR Criada', 'PO Emitido'] else '' }}">
+                    <div class="timeline-item {{ 'active' if demanda.status == 'Em Cotação' else 'completed' if demanda.status in ['PR Criada', 'PO Emitido', 'NF Recebida'] else '' }}">
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h6>Em Cotação</h6>
@@ -225,7 +226,7 @@
                         </div>
                     </div>
                     
-                    <div class="timeline-item {{ 'active' if demanda.status == 'PR Criada' else 'completed' if demanda.status == 'PO Emitido' else '' }}">
+                    <div class="timeline-item {{ 'active' if demanda.status == 'PR Criada' else 'completed' if demanda.status in ['PO Emitido', 'NF Recebida'] else '' }}">
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h6>PR Criada</h6>
@@ -233,11 +234,27 @@
                         </div>
                     </div>
                     
-                    <div class="timeline-item {{ 'active' if demanda.status == 'PO Emitido' else '' }}">
+                    <div class="timeline-item {{ 'active' if demanda.status == 'PO Emitido' else 'completed' if demanda.status == 'NF Recebida' else '' }}">
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h6>PO Emitido</h6>
                             <small>Purchase Order</small>
+                        </div>
+                    </div>
+                    
+                    <div class="timeline-item {{ 'active' if demanda.status == 'NF Recebida' else '' }}">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h6>NF Recebida</h6>
+                            {% if demanda.pedido and demanda.pedido.data_recebimento_nf %}
+                                <div class="mt-2">
+                                    <i class="fas fa-receipt text-success me-2"></i>
+                                    <strong>NF: {{ demanda.pedido.numero_nota_fiscal }}</strong>
+                                    <br><small class="text-muted">Recebida em {{ demanda.pedido.data_recebimento_nf.strftime('%d/%m/%Y %H:%M') }}</small>
+                                </div>
+                            {% else %}
+                                <small>Nota Fiscal</small>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -260,6 +277,24 @@
                     {% endif %}
                 </p>
                 <p><strong>Previsão:</strong> {{ demanda.pedido.mes_previsto_recebimento or 'N/A' }}</p>
+                
+                {% if demanda.pedido.numero_nota_fiscal or demanda.pedido.data_recebimento_nf %}
+                <hr>
+                <h6><i class="fas fa-receipt"></i> Nota Fiscal</h6>
+                <p><strong>Número NF:</strong> 
+                    {% if demanda.pedido.numero_nota_fiscal %}
+                        <span class="badge bg-info">{{ demanda.pedido.numero_nota_fiscal }}</span>
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+                {% if demanda.pedido.data_recebimento_nf %}
+                <p><strong>Data Recebimento NF:</strong> 
+                    <span class="badge bg-success">{{ demanda.pedido.data_recebimento_nf.strftime('%d/%m/%Y %H:%M') }}</span>
+                </p>
+                {% endif %}
+                {% endif %}
+                
                 <a href="{{ url_for('listar_pedidos') }}" class="btn btn-sm btn-outline-primary">
                     <i class="fas fa-eye"></i> Ver Detalhes
                 </a>

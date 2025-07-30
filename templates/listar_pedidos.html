@@ -24,6 +24,7 @@
                             <th>Fornecedor</th>
                             <th>Valor Total</th>
                             <th>Previsão Recebimento</th>
+                            <th>Nota Fiscal</th>
                             <th>Status</th>
                             <th>Ações</th>
                         </tr>
@@ -49,6 +50,24 @@
                             </td>
                             <td>{{ pedido.mes_previsto_recebimento or 'N/A' }}</td>
                             <td>
+                                {% if pedido.data_recebimento_nf and pedido.numero_nota_fiscal %}
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-receipt text-success me-2"></i>
+                                        <div>
+                                            <strong>{{ pedido.numero_nota_fiscal }}</strong>
+                                            <br><small class="text-muted">{{ pedido.data_recebimento_nf.strftime('%d/%m/%Y') }}</small>
+                                        </div>
+                                    </div>
+                                {% elif pedido.numero_nota_fiscal %}
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-alt text-warning me-2"></i>
+                                        <span class="text-muted">{{ pedido.numero_nota_fiscal }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
                                 {% if pedido.data_recebimento %}
                                     <span class="badge bg-success">Recebido</span>
                                     <br><small>{{ pedido.data_recebimento.strftime('%d/%m/%Y') }}</small>
@@ -66,6 +85,11 @@
                                         <button type="button" class="btn btn-outline-success" 
                                                 onclick="confirmarRecebimento({{ pedido.id }})" title="Confirmar Recebimento">
                                             <i class="fas fa-check"></i>
+                                        </button>
+                                    {% elif pedido.data_recebimento and not pedido.data_recebimento_nf %}
+                                        <button type="button" class="btn btn-outline-dark" 
+                                                onclick="confirmarRecebimentoNF({{ pedido.id }})" title="Confirmar Recebimento NF">
+                                            <i class="fas fa-receipt"></i>
                                         </button>
                                     {% endif %}
                                 </div>
@@ -168,6 +192,34 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para confirmar recebimento da NF -->
+<div class="modal fade" id="modalRecebimentoNF" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Recebimento da Nota Fiscal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRecebimentoNF" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="numero_nota_fiscal" class="form-label">Número da Nota Fiscal:</label>
+                        <input type="text" class="form-control" id="numero_nota_fiscal" name="numero_nota_fiscal" required>
+                    </div>
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        A data de recebimento da NF será registrada automaticamente.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Confirmar Recebimento NF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -181,6 +233,20 @@
         
         // Limpar o campo de valor
         document.getElementById('valor_recebido').value = '';
+        
+        // Mostrar o modal
+        modal.show();
+    }
+    
+    function confirmarRecebimentoNF(pedidoId) {
+        const modal = new bootstrap.Modal(document.getElementById('modalRecebimentoNF'));
+        const form = document.getElementById('formRecebimentoNF');
+        
+        // Definir a action do formulário
+        form.action = `/confirmar_recebimento_nf/${pedidoId}`;
+        
+        // Limpar o campo de número da NF
+        document.getElementById('numero_nota_fiscal').value = '';
         
         // Mostrar o modal
         modal.show();

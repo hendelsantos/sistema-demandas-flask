@@ -97,6 +97,50 @@
 </div>
 
 <div class="row">
+    <div class="col-md-3 mb-4">
+        <div class="card bg-secondary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ demandas_pr }}</h4>
+                        <p class="mb-0">PR Criada</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-file-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas', status='PR Criada') }}" class="text-white text-decoration-none">
+                    Ver PRs <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-4">
+        <div class="card bg-dark text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>{{ demandas_nf }}</h4>
+                        <p class="mb-0">NF Recebida</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-receipt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{{ url_for('listar_demandas', status='NF Recebida') }}" class="text-white text-decoration-none">
+                    Ver NFs <i class="fas fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
     <div class="col-md-6">
         <div class="card">
             <div class="card-header">

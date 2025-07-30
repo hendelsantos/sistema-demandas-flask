@@ -54,7 +54,8 @@ class Pedido(db.Model):
     valor_total = db.Column(db.Float)
     mes_previsto_recebimento = db.Column(db.String(7))  # YYYY-MM
     data_pedido = db.Column(db.DateTime, default=datetime.utcnow)
-    data_recebimento = db.Column(db.DateTime)
+    data_recebimento = db.Column(db.DateTime)  # Data de recebimento do produto/material
+    data_recebimento_nf = db.Column(db.DateTime)  # Data de recebimento da Nota Fiscal
     valor_recebido = db.Column(db.Float)
     fornecedor = db.Column(db.String(200))
 
@@ -135,13 +136,15 @@ def dashboard():
     demandas_cotacao = Demanda.query.filter_by(status='Em Cotação').count()
     demandas_pr = Demanda.query.filter_by(status='PR Criada').count()
     demandas_po = Demanda.query.filter_by(status='PO Emitido').count()
+    demandas_nf = Demanda.query.filter_by(status='NF Recebida').count()
     
     return render_template('dashboard.html', 
                          total_demandas=total_demandas,
                          demandas_abertas=demandas_abertas,
                          demandas_cotacao=demandas_cotacao,
                          demandas_pr=demandas_pr,
-                         demandas_po=demandas_po)
+                         demandas_po=demandas_po,
+                         demandas_nf=demandas_nf)
 
 @app.route('/nova_demanda', methods=['GET', 'POST'])
 def nova_demanda():
@@ -316,6 +319,25 @@ def confirmar_recebimento(pedido_id):
     db.session.commit()
     
     flash('Recebimento confirmado com sucesso!', 'success')
+    return redirect(url_for('listar_pedidos'))
+
+@app.route('/confirmar_recebimento_nf/<int:pedido_id>', methods=['POST'])
+@admin_required
+def confirmar_recebimento_nf(pedido_id):
+    pedido = Pedido.query.get_or_404(pedido_id)
+    
+    # Atualizar dados da Nota Fiscal
+    pedido.numero_nota_fiscal = request.form['numero_nota_fiscal']
+    pedido.data_recebimento_nf = datetime.utcnow()
+    
+    # Atualizar status da demanda para "NF Recebida"
+    demanda = pedido.demanda
+    demanda.status = 'NF Recebida'
+    demanda.data_atualizacao = datetime.utcnow()
+    
+    db.session.commit()
+    
+    flash('Recebimento da Nota Fiscal confirmado com sucesso!', 'success')
     return redirect(url_for('listar_pedidos'))
 
 @app.route('/metricas')

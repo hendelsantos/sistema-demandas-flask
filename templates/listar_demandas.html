@@ -38,6 +38,10 @@
                class="btn {{ 'btn-success' if status_filter == 'PO Emitido' else 'btn-outline-success' }}">
                 PO Emitido
             </a>
+            <a href="{{ url_for('listar_demandas', status='NF Recebida') }}" 
+               class="btn {{ 'btn-dark' if status_filter == 'NF Recebida' else 'btn-outline-dark' }}">
+                NF Recebida
+            </a>
         </div>
     </div>
 </div>
@@ -79,6 +83,8 @@
                                     <span class="badge bg-secondary">{{ demanda.status }}</span>
                                 {% elif demanda.status == 'PO Emitido' %}
                                     <span class="badge bg-success">{{ demanda.status }}</span>
+                                {% elif demanda.status == 'NF Recebida' %}
+                                    <span class="badge bg-dark">{{ demanda.status }}</span>
                                 {% else %}
                                     <span class="badge bg-secondary">{{ demanda.status }}</span>
                                 {% endif %}
@@ -138,21 +144,25 @@
             </div>
             <div class="card-body">
                 <div class="row">
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <span class="badge bg-warning text-dark me-2">Aberto</span>
                         Demanda criada, aguardando cotação
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <span class="badge bg-info me-2">Em Cotação</span>
                         Cotação sendo realizada
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <span class="badge bg-secondary me-2">PR Criada</span>
                         Purchase Request criada
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
                         <span class="badge bg-success me-2">PO Emitido</span>
                         Purchase Order emitida
+                    </div>
+                    <div class="col-md-2">
+                        <span class="badge bg-dark me-2">NF Recebida</span>
+                        Nota Fiscal recebida
                     </div>
                 </div>
             </div>
