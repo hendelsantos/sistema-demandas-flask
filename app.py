@@ -9,6 +9,9 @@ from datetime import datetime
 import uuid
 from sqlalchemy import func, extract
 
+# Importar módulo da rede social
+from rede_social import registrar_rotas_rede_social
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sua-chave-secreta-aqui'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
@@ -776,6 +779,10 @@ def criar_usuario_admin():
         db.session.add(admin)
         db.session.commit()
         print("Usuário admin criado com sucesso!")
+
+# Registrar rotas da rede social
+with app.app_context():
+    registrar_rotas_rede_social(app, db)
 
 if __name__ == '__main__':
     with app.app_context():

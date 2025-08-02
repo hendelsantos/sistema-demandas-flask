@@ -34,6 +34,11 @@
                             <i class="fas fa-list"></i> Demandas
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('rede_social') }}">
+                            <i class="fas fa-comments"></i> Rede Social
+                        </a>
+                    </li>
                     {% if session.is_admin %}
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('listar_pedidos') }}">
