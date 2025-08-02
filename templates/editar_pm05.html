@@ -1,0 +1,553 @@
+{% extends "base.html" %}
+
+{% block title %}Editar PM05 - {{ item.numero_pm05 }}{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .input-group-custom input,
+    .input-group-custom textarea,
+    .input-group-custom select {
+        padding-left: 45px;
+    }
+    
+    .input-group-custom .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-help {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .btn-action {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+    }
+    
+    .btn-secondary-custom {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary-custom:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+    
+    .status-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 25px;
+        margin-bottom: 25px;
+        border-left: 4px solid #667eea;
+    }
+    
+    .status-section.em-reparo {
+        border-left-color: #ff8c00;
+        background: #fff8f0;
+    }
+    
+    .status-section.finalizado {
+        border-left-color: #28a745;
+        background: #f0fff4;
+    }
+    
+    .status-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .status-em-reparo {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ff8c00;
+    }
+    
+    .status-finalizado {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+    
+    .floating-actions {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+    }
+    
+    .floating-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .floating-btn.save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .floating-btn.save:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+    }
+    
+    .floating-btn.cancel {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+    
+    .floating-btn.cancel:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(108,117,125,0.4);
+    }
+    
+    .days-counter {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px;
+        background: #e7f3ff;
+        border-radius: 10px;
+        border-left: 4px solid #17a2b8;
+        margin-bottom: 20px;
+    }
+    
+    .days-counter.warning {
+        background: #fff8f0;
+        border-left-color: #ff8c00;
+    }
+    
+    .days-counter.danger {
+        background: #fff5f5;
+        border-left-color: #dc3545;
+    }
+    
+    .days-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #17a2b8;
+    }
+    
+    .days-counter.warning .days-number {
+        color: #ff8c00;
+    }
+    
+    .days-counter.danger .days-number {
+        color: #dc3545;
+    }
+</style>
+
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h3 class="mb-0">
+                <i class="fas fa-edit"></i> 
+                Editar Item PM05 - {{ item.numero_pm05 }}
+            </h3>
+            <p class="mb-0 mt-2 opacity-75">Atualize as informações do equipamento em reparo</p>
+        </div>
+        
+        <!-- Status Atual -->
+        <div class="status-section {{ item.status.lower().replace('_', '-') }}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-2">Status Atual</h5>
+                    <span class="status-badge status-{{ item.status.lower().replace('_', '-') }}">
+                        {% if item.status == 'EM_REPARO' %}
+                            <i class="fas fa-wrench"></i> Em Reparo
+                        {% else %}
+                            <i class="fas fa-check-circle"></i> Finalizado
+                        {% endif %}
+                    </span>
+                </div>
+                {% if item.status == 'EM_REPARO' and item.data_envio %}
+                    {% set days_out = days_in_repair if days_in_repair is defined else 0 %}
+                    <div class="days-counter {{ 'danger' if days_out > 30 else 'warning' if days_out > 15 else '' }}">
+                        <div class="days-number">{{ days_out }}</div>
+                        <div>
+                            <strong>{{ 'dias' if days_out != 1 else 'dia' }} em reparo</strong>
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <form id="editForm" method="POST" action="{{ url_for('atualizar_pm05', id=item.id) }}">
+            <!-- Informações Básicas -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-hashtag input-icon"></i>
+                        <label class="form-label required-field">Número PM05</label>
+                        <input type="text" class="form-control" name="numero_pm05" required
+                               value="{{ item.numero_pm05 }}" placeholder="Ex: PM05-2024-001">
+                        <div class="form-help">Código único de identificação do PM05</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-file-invoice input-icon"></i>
+                        <label class="form-label required-field">Número da Invoice</label>
+                        <input type="text" class="form-control" name="numero_invoice" required
+                               value="{{ item.numero_invoice }}" placeholder="Ex: INV-2024-0123">
+                        <div class="form-help">Número da fatura de envio</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-12">
+                    <div class="input-group-custom">
+                        <i class="fas fa-align-left input-icon"></i>
+                        <label class="form-label required-field">Descrição do Equipamento</label>
+                        <textarea class="form-control" name="descricao" rows="3" required
+                                  placeholder="Descreva o equipamento e o problema identificado...">{{ item.descricao }}</textarea>
+                        <div class="form-help">Descrição detalhada do equipamento e motivo do reparo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Catálogos e Quantidade -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-barcode input-icon"></i>
+                        <label class="form-label required-field">Catálogo de Envio</label>
+                        <input type="text" class="form-control" name="catalog_envio" required
+                               value="{{ item.catalog_envio }}" placeholder="Ex: CAT-ENV-001">
+                        <div class="form-help">Código do catálogo para envio</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-barcode input-icon"></i>
+                        <label class="form-label">Catálogo ERSA</label>
+                        <input type="text" class="form-control" name="catalog_ersa"
+                               value="{{ item.catalog_ersa or '' }}" placeholder="Ex: ERSA-CAT-001">
+                        <div class="form-help">Código ERSA (se aplicável)</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-cubes input-icon"></i>
+                        <label class="form-label required-field">Quantidade</label>
+                        <input type="number" class="form-control" name="quantidade" required min="1" 
+                               value="{{ item.quantidade }}">
+                        <div class="form-help">Quantidade de itens enviados</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fornecedor e Datas -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-building input-icon"></i>
+                        <label class="form-label required-field">Fornecedor</label>
+                        <input type="text" class="form-control" name="fornecedor" required
+                               value="{{ item.fornecedor }}" placeholder="Nome do fornecedor responsável pelo reparo">
+                        <div class="form-help">Empresa responsável pelo reparo</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-calendar-alt input-icon"></i>
+                        <label class="form-label required-field">Data de Envio</label>
+                        <input type="date" class="form-control" name="data_envio" required
+                               value="{{ item.data_envio.strftime('%Y-%m-%d') if item.data_envio else '' }}">
+                        <div class="form-help">Data em que o equipamento foi enviado</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Especificações Técnicas -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="input-group-custom">
+                        <i class="fas fa-cogs input-icon"></i>
+                        <label class="form-label">Especificação Técnica</label>
+                        <textarea class="form-control" name="spec" rows="4"
+                                  placeholder="Especificações técnicas, modelo, série, características especiais...">{{ item.spec or '' }}</textarea>
+                        <div class="form-help">Informações técnicas detalhadas do equipamento</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notas Fiscais e Valor -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-file-invoice input-icon"></i>
+                        <label class="form-label">NF de Saída</label>
+                        <input type="text" class="form-control" name="nf_saida"
+                               value="{{ item.nf_saida or '' }}" placeholder="Número da nota fiscal de saída">
+                        <div class="form-help">Nota fiscal para envio ao fornecedor</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-file-invoice-dollar input-icon"></i>
+                        <label class="form-label">NF de Retorno</label>
+                        <input type="text" class="form-control" name="nf_retorno"
+                               value="{{ item.nf_retorno or '' }}" placeholder="Número da nota fiscal de retorno"
+                               {{ 'readonly' if item.status == 'FINALIZADO' else '' }}>
+                        <div class="form-help">Nota fiscal de retorno ({{ 'preenchida automaticamente' if item.status == 'FINALIZADO' else 'será preenchida na finalização' }})</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="input-group-custom">
+                        <i class="fas fa-dollar-sign input-icon"></i>
+                        <label class="form-label">Valor do Reparo</label>
+                        <input type="number" class="form-control" name="valor_reparo" step="0.01" min="0"
+                               value="{{ item.valor_reparo or '' }}" placeholder="0.00">
+                        <div class="form-help">Valor estimado ou contratado para o reparo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data de Retorno (só para finalizados) -->
+            {% if item.status == 'FINALIZADO' %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-calendar-check input-icon"></i>
+                        <label class="form-label">Data de Retorno</label>
+                        <input type="date" class="form-control" name="data_retorno"
+                               value="{{ item.data_retorno.strftime('%Y-%m-%d') if item.data_retorno else '' }}"
+                               readonly>
+                        <div class="form-help">Data em que o equipamento retornou do reparo</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <!-- Observações -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-sticky-note input-icon"></i>
+                        <label class="form-label">Observações Iniciais</label>
+                        <textarea class="form-control" name="observacoes" rows="4"
+                                  placeholder="Observações sobre o estado do equipamento, problemas identificados, instruções especiais...">{{ item.observacoes or '' }}</textarea>
+                        <div class="form-help">Informações adicionais sobre o envio</div>
+                    </div>
+                </div>
+                {% if item.status == 'FINALIZADO' %}
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-clipboard-check input-icon"></i>
+                        <label class="form-label">Observações do Retorno</label>
+                        <textarea class="form-control" name="observacoes_retorno" rows="4"
+                                  placeholder="Condições do equipamento após reparo, observações do fornecedor...">{{ item.observacoes_retorno or '' }}</textarea>
+                        <div class="form-help">Informações sobre o retorno do reparo</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Status -->
+            {% if session.is_admin %}
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="input-group-custom">
+                        <i class="fas fa-info-circle input-icon"></i>
+                        <label class="form-label">Status</label>
+                        <select class="form-control" name="status">
+                            <option value="EM_REPARO" {{ 'selected' if item.status == 'EM_REPARO' else '' }}>Em Reparo</option>
+                            <option value="FINALIZADO" {{ 'selected' if item.status == 'FINALIZADO' else '' }}>Finalizado</option>
+                        </select>
+                        <div class="form-help">Status atual do item (apenas administradores podem alterar)</div>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <input type="hidden" name="status" value="{{ item.status }}">
+            {% endif %}
+            
+            <!-- Botões de Ação -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{{ url_for('detalhes_pm05', id=item.id) }}" class="btn-action btn-secondary-custom">
+                    <i class="fas fa-arrow-left"></i> Voltar aos Detalhes
+                </a>
+                <div class="d-flex gap-3">
+                    <a href="{{ url_for('listar_pm05') }}" class="btn-action btn-secondary-custom">
+                        <i class="fas fa-times"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn-action btn-primary-custom">
+                        <i class="fas fa-save"></i> Salvar Alterações
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Botões Flutuantes -->
+<div class="floating-actions">
+    <button type="button" class="floating-btn save" onclick="document.getElementById('editForm').submit()" 
+            title="Salvar Alterações">
+        <i class="fas fa-save"></i>
+    </button>
+    <button type="button" class="floating-btn cancel" onclick="cancelar()" 
+            title="Cancelar">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cancelar() {
+    if (confirm('Deseja realmente cancelar? As alterações não salvas serão perdidas.')) {
+        window.location.href = "{{ url_for('detalhes_pm05', id=item.id) }}";
+    }
+}
+
+// Validação do formulário
+document.getElementById('editForm').addEventListener('submit', function(e) {
+    const requiredFields = this.querySelectorAll('[required]');
+    let valid = true;
+    
+    requiredFields.forEach(field => {
+        if (!field.value.trim()) {
+            field.classList.add('is-invalid');
+            valid = false;
+        } else {
+            field.classList.remove('is-invalid');
+        }
+    });
+    
+    if (!valid) {
+        e.preventDefault();
+        alert('Por favor, preencha todos os campos obrigatórios.');
+        return;
+    }
+    
+    // Desabilitar botão de envio para evitar duplo clique
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+});
+
+// Remover classe de erro quando campo for preenchido
+document.querySelectorAll('input[required], textarea[required], select[required]').forEach(field => {
+    field.addEventListener('input', function() {
+        this.classList.remove('is-invalid');
+    });
+});
+
+// Auto-salvar no localStorage
+function autoSave() {
+    const formData = new FormData(document.getElementById('editForm'));
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        data[key] = value;
+    }
+    localStorage.setItem('pm05_edit_{{ item.id }}', JSON.stringify(data));
+}
+
+// Auto-salvar a cada 30 segundos
+setInterval(autoSave, 30000);
+
+// Atalhos de teclado
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('editForm').submit();
+    }
+    
+    if (e.key === 'Escape') {
+        cancelar();
+    }
+});
+
+// Limpar rascunho ao submeter com sucesso
+document.getElementById('editForm').addEventListener('submit', function() {
+    localStorage.removeItem('pm05_edit_{{ item.id }}');
+});
+
+// Avisar sobre alterações não salvas
+let formChanged = false;
+document.getElementById('editForm').addEventListener('change', function() {
+    formChanged = true;
+});
+
+window.addEventListener('beforeunload', function(e) {
+    if (formChanged) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+
+// Marcar como não alterado ao submeter
+document.getElementById('editForm').addEventListener('submit', function() {
+    formChanged = false;
+});
+</script>
+{% endblock %}

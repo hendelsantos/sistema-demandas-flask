@@ -1,0 +1,575 @@
+{% extends "base.html" %}
+
+{% block title %}PM05 - Controle de Equipamentos em Reparo{% endblock %}
+
+{% block content %}
+<style>
+    .pm05-card {
+        border: 2px solid #e1e8ed;
+        border-radius: 15px;
+        transition: all 0.3s ease;
+        margin-bottom: 20px;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .pm05-card.em-reparo {
+        border-color: #ff8c00;
+        box-shadow: 0 4px 12px rgba(255,140,0,0.2);
+    }
+    
+    .pm05-card.finalizado {
+        border-color: #28a745;
+        box-shadow: 0 4px 12px rgba(40,167,69,0.2);
+    }
+    
+    .pm05-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+    
+    .card-header-pm05 {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 13px 13px 0 0;
+        padding: 15px 20px;
+    }
+    
+    .card-header-pm05.em-reparo {
+        background: linear-gradient(135deg, #ff8c00 0%, #ff6b35 100%);
+    }
+    
+    .card-header-pm05.finalizado {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .status-em-reparo {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ff8c00;
+    }
+    
+    .status-finalizado {
+        background: #d4edda;
+        color: #155724;
+        border: 1px solid #28a745;
+    }
+    
+    .info-item {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+    }
+    
+    .info-item i {
+        width: 20px;
+        margin-right: 10px;
+        color: #6c757d;
+    }
+    
+    .search-container {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+    }
+    
+    .filter-btn {
+        padding: 8px 16px;
+        border: 2px solid #e1e8ed;
+        background: white;
+        border-radius: 25px;
+        text-decoration: none;
+        color: #495057;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .filter-btn:hover, .filter-btn.active {
+        background: #667eea;
+        border-color: #667eea;
+        color: white;
+        text-decoration: none;
+    }
+    
+    .filter-btn.active {
+        transform: scale(1.05);
+    }
+    
+    .stats-widget {
+        background: white;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 25px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        margin-top: 15px;
+    }
+    
+    .btn-action {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-details {
+        background: #17a2b8;
+        color: white;
+    }
+    
+    .btn-details:hover {
+        background: #138496;
+        transform: scale(1.05);
+    }
+    
+        .btn-finish {
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            border: 1px solid #27ae60;
+        }
+
+        .btn-finish:hover {
+            background: linear-gradient(135deg, #27ae60, #229954);
+            border-color: #229954;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border: 1px solid #c0392b;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c0392b, #a93226);
+            border-color: #a93226;
+        }    .floating-add-btn {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 24px;
+        cursor: pointer;
+        box-shadow: 0 4px 20px rgba(102,126,234,0.4);
+        transition: all 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .floating-add-btn:hover {
+        transform: scale(1.1) rotate(90deg);
+        box-shadow: 0 6px 25px rgba(102,126,234,0.6);
+    }
+    
+    .days-counter {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .urgent {
+        border-left: 4px solid #dc3545 !important;
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Header e Estatísticas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2 class="mb-0">
+                    <i class="fas fa-tools text-primary"></i> 
+                    Controle PM05 - Equipamentos em Reparo
+                </h2>
+                <div class="d-flex gap-2">
+                    <span class="badge bg-warning">{{ stats.em_reparo }} Em Reparo</span>
+                    <span class="badge bg-success">{{ stats.finalizados }} Finalizados</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estatísticas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stats-widget">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-primary">{{ stats.total_items }}</div>
+                            <div class="stat-label">Total de Itens</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-warning">{{ stats.em_reparo }}</div>
+                            <div class="stat-label">Em Reparo</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-success">{{ stats.finalizados }}</div>
+                            <div class="stat-label">Finalizados</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="stat-item">
+                            <div class="stat-number text-info">{{ ((stats.finalizados / stats.total_items * 100) if stats.total_items > 0 else 0)|round(1) }}%</div>
+                            <div class="stat-label">Taxa de Retorno</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros e Busca -->
+    <div class="row">
+        <div class="col-12">
+            <div class="search-container">
+                <div class="filter-buttons">
+                    <a href="{{ url_for('listar_pm05') }}" 
+                       class="filter-btn {{ 'active' if not filtro_status else '' }}">
+                        <i class="fas fa-list"></i> Todos
+                    </a>
+                    <a href="{{ url_for('listar_pm05', status='EM_REPARO') }}" 
+                       class="filter-btn {{ 'active' if filtro_status == 'EM_REPARO' else '' }}">
+                        <i class="fas fa-wrench text-warning"></i> Em Reparo
+                    </a>
+                    <a href="{{ url_for('listar_pm05', status='FINALIZADO') }}" 
+                       class="filter-btn {{ 'active' if filtro_status == 'FINALIZADO' else '' }}">
+                        <i class="fas fa-check-circle text-success"></i> Finalizados
+                    </a>
+                </div>
+                
+                <form method="GET" class="d-flex gap-3 align-items-end">
+                    {% if filtro_status %}
+                        <input type="hidden" name="status" value="{{ filtro_status }}">
+                    {% endif %}
+                    <div class="flex-grow-1">
+                        <label class="form-label">
+                            <i class="fas fa-search"></i> Buscar por descrição, PM05, invoice, fornecedor...
+                        </label>
+                        <input type="text" 
+                               class="form-control" 
+                               name="busca" 
+                               value="{{ filtro_busca or '' }}"
+                               placeholder="Digite sua busca aqui...">
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Buscar
+                    </button>
+                    {% if filtro_busca %}
+                        <a href="{{ url_for('listar_pm05', status=filtro_status) }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times"></i> Limpar
+                        </a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lista de Itens PM05 -->
+    <div class="row">
+        {% if items %}
+            {% for item in items %}
+            <div class="col-lg-6 col-xl-4">
+                <div class="pm05-card {{ item.status.lower().replace('_', '-') }}">
+                    <div class="card-header-pm05 {{ item.status.lower().replace('_', '-') }}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">{{ item.numero_pm05 }}</h6>
+                                <small class="opacity-75">{{ item.numero_invoice }}</small>
+                            </div>
+                            <span class="status-badge status-{{ item.status.lower().replace('_', '-') }}">
+                                {% if item.status == 'EM_REPARO' %}
+                                    <i class="fas fa-wrench"></i> Em Reparo
+                                {% else %}
+                                    <i class="fas fa-check-circle"></i> Finalizado
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h6 class="card-title text-truncate" title="{{ item.descricao }}">
+                            {{ item.descricao }}
+                        </h6>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-barcode"></i>
+                            <span><strong>Catálogo:</strong> {{ item.catalog_envio }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-building"></i>
+                            <span><strong>Fornecedor:</strong> {{ item.fornecedor }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-cubes"></i>
+                            <span><strong>Quantidade:</strong> {{ item.quantidade }}</span>
+                        </div>
+                        
+                        <div class="info-item">
+                            <i class="fas fa-calendar-alt"></i>
+                            <span><strong>Envio:</strong> {{ item.data_envio.strftime('%d/%m/%Y') if item.data_envio else 'N/A' }}</span>
+                        </div>
+                        
+                        {% if item.data_retorno %}
+                            <div class="info-item">
+                                <i class="fas fa-calendar-check"></i>
+                                <span><strong>Retorno:</strong> {{ item.data_retorno.strftime('%d/%m/%Y') }}</span>
+                            </div>
+                        {% else %}
+                            <div class="days-counter">
+                                <i class="fas fa-clock"></i>
+                                {% set days_out = item.days_in_repair if item.days_in_repair is defined else 0 %}
+                                <span class="{{ 'text-danger' if days_out > 30 else 'text-warning' if days_out > 15 else 'text-info' }}">
+                                    {{ days_out }} dias em reparo
+                                </span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if item.nf_saida %}
+                            <div class="info-item">
+                                <i class="fas fa-file-invoice"></i>
+                                <span><strong>NF Saída:</strong> {{ item.nf_saida }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        {% if item.nf_retorno %}
+                            <div class="info-item">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <span><strong>NF Retorno:</strong> {{ item.nf_retorno }}</span>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="action-buttons">
+                            <button class="btn-action btn-details" onclick="verDetalhes({{ item.id }})">
+                                <i class="fas fa-eye"></i> Detalhes
+                            </button>
+                            {% if item.status == 'EM_REPARO' %}
+                                <button class="btn-action btn-finish" onclick="finalizarItem({{ item.id }})">
+                                    <i class="fas fa-check"></i> Finalizar
+                                </button>
+                            {% endif %}
+                            {% if session.user_id or session.is_admin %}
+                                <button class="btn-action btn-delete" onclick="deletarItem({{ item.id }}, '{{ item.numero_pm05 }}')">
+                                    <i class="fas fa-trash"></i> Deletar
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="fas fa-tools fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Nenhum item PM05 encontrado</h4>
+                    <p class="text-muted">
+                        {% if filtro_busca %}
+                            Sua busca por "{{ filtro_busca }}" não retornou resultados.
+                        {% elif filtro_status %}
+                            Não há itens com status "{{ filtro_status }}".
+                        {% else %}
+                            Ainda não há itens PM05 cadastrados no sistema.
+                        {% endif %}
+                    </p>
+                    <a href="{{ url_for('novo_pm05') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-plus"></i> Criar Primeiro Item PM05
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <!-- Top Fornecedores -->
+    {% if stats.top_fornecedores %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="stats-widget">
+                <h5><i class="fas fa-building"></i> Fornecedores Mais Utilizados</h5>
+                <div class="row">
+                    {% for fornecedor in stats.top_fornecedores %}
+                    <div class="col-md-2">
+                        <div class="text-center">
+                            <div class="fw-bold text-primary">{{ fornecedor.total }}</div>
+                            <small class="text-muted">{{ fornecedor.nome }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Botão Flutuante -->
+<button class="floating-add-btn" onclick="novoItem()" title="Adicionar Novo Item PM05">
+    <i class="fas fa-plus"></i>
+</button>
+
+<!-- Modal para Finalizar Item -->
+<div class="modal fade" id="finalizarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-check-circle text-success"></i> Finalizar Item PM05
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="finalizarForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">NF de Retorno</label>
+                        <input type="text" class="form-control" name="nf_retorno" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Data de Retorno</label>
+                        <input type="date" class="form-control" name="data_retorno" 
+                               value="{{ today_date }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações do Retorno</label>
+                        <textarea class="form-control" name="observacoes_retorno" rows="3"
+                                  placeholder="Condições do equipamento, observações do reparo..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-check"></i> Finalizar Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentItemId = null;
+
+function novoItem() {
+    window.location.href = "{{ url_for('novo_pm05') }}";
+}
+
+function verDetalhes(itemId) {
+    window.location.href = `/pm05/detalhes/${itemId}`;
+}
+
+function finalizarItem(itemId) {
+    currentItemId = itemId;
+    const modal = new bootstrap.Modal(document.getElementById('finalizarModal'));
+    modal.show();
+}
+
+document.getElementById('finalizarForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const submitBtn = this.querySelector('button[type="submit"]');
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Finalizando...';
+    
+    try {
+        const response = await fetch(`/pm05/finalizar/${currentItemId}`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            location.reload();
+        } else {
+            const data = await response.json();
+            alert('Erro: ' + (data.error || 'Erro desconhecido'));
+        }
+    } catch (error) {
+        alert('Erro de conexão: ' + error.message);
+    }
+    
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = '<i class="fas fa-check"></i> Finalizar Item';
+});
+
+function deletarItem(id, numeroPm05) {
+    if (confirm(`Deseja realmente deletar o item PM05 ${numeroPm05}? Esta ação não pode ser desfeita e todos os dados relacionados serão removidos.`)) {
+        // Criar formulário para envio via POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/pm05/deletar/${id}`;
+        
+        // Adicionar token CSRF se necessário
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrf_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+
+// Auto-refresh a cada 5 minutos para atualizar contadores
+setTimeout(() => {
+    if (!document.hidden) {
+        location.reload();
+    }
+}, 300000);
+</script>
+{% endblock %}

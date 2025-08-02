@@ -1,0 +1,869 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Item PM05{% endblock %}
+
+{% block content %}
+<style>
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        margin-bottom: 30px;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius:                        <label class="form-label required-field">Data de Envio</label>
+                        <input type="date" class="form-control" name="data_envio" required
+                               value="{{ today_date }}">px 15px 0 0;
+        padding: 20px 30px;
+        margin: -30px -30px 30px -30px;
+    }
+    
+    .form-step {
+        border: 2px solid #e1e8ed;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 25px;
+        background: #fafbfc;
+        transition: all 0.3s ease;
+    }
+    
+    .form-step.active {
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 4px 15px rgba(102,126,234,0.1);
+    }
+    
+    .step-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid #e1e8ed;
+    }
+    
+    .step-number {
+        width: 35px;
+        height: 35px;
+        background: #667eea;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+    }
+    
+    .upload-area {
+        border: 2px dashed #667eea;
+        border-radius: 10px;
+        padding: 40px 20px;
+        text-align: center;
+        background: #f8f9ff;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .upload-area:hover {
+        border-color: #5a67d8;
+        background: #f0f1ff;
+    }
+    
+    .upload-area.dragover {
+        border-color: #4299e1;
+        background: #ebf8ff;
+        transform: scale(1.02);
+    }
+    
+    .file-preview {
+        display: flex;
+        align-items: center;
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+    
+    .file-icon {
+        width: 40px;
+        height: 40px;
+        background: #667eea;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        margin-right: 15px;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-help {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-top: 5px;
+    }
+    
+    .btn-action {
+        padding: 12px 30px;
+        border-radius: 25px;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .btn-primary-custom {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    .btn-primary-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102,126,234,0.4);
+    }
+    
+    .btn-secondary-custom {
+        background: #6c757d;
+        color: white;
+    }
+    
+    .btn-secondary-custom:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+    
+    .floating-actions {
+        position: fixed;
+        bottom: 30px;
+        right: 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1000;
+    }
+    
+    .floating-btn {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    .floating-btn.save {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+    
+    .floating-btn.save:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+    }
+    
+    .floating-btn.cancel {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+    
+    .floating-btn.cancel:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 20px rgba(108,117,125,0.4);
+    }
+    
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .input-group-custom input,
+    .input-group-custom textarea,
+    .input-group-custom select {
+        padding-left: 45px;
+    }
+    
+    .input-group-custom .input-icon {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        z-index: 10;
+    }
+    
+    .auto-suggest {
+        position: relative;
+    }
+    
+    .suggest-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #e1e8ed;
+        border-top: none;
+        border-radius: 0 0 8px 8px;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        display: none;
+    }
+    
+    .suggest-item {
+        padding: 10px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f1f3f4;
+    }
+    
+    .suggest-item:hover {
+        background: #f8f9fa;
+    }
+    
+    .progress-indicator {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .progress-step {
+        flex: 1;
+        text-align: center;
+        position: relative;
+    }
+    
+    .progress-step::before {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 50%;
+        right: -50%;
+        height: 2px;
+        background: #e1e8ed;
+        z-index: 1;
+    }
+    
+    .progress-step:last-child::before {
+        display: none;
+    }
+    
+    .progress-step.completed::before {
+        background: #28a745;
+    }
+    
+    .progress-circle {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: #e1e8ed;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 10px;
+        position: relative;
+        z-index: 2;
+        font-weight: bold;
+        font-size: 14px;
+    }
+    
+    .progress-step.completed .progress-circle {
+        background: #28a745;
+        color: white;
+    }
+    
+    .progress-step.active .progress-circle {
+        background: #667eea;
+        color: white;
+    }
+</style>
+
+<div class="container">
+    <div class="form-container">
+        <div class="form-header">
+            <h3 class="mb-0">
+                <i class="fas fa-plus-circle"></i> 
+                Novo Item PM05 - Equipamento para Reparo Externo
+            </h3>
+            <p class="mb-0 mt-2 opacity-75">Registre um novo equipamento enviado para reparo em fornecedor externo</p>
+        </div>
+        
+        <!-- Indicador de Progresso -->
+        <div class="progress-indicator">
+            <div class="progress-step active">
+                <div class="progress-circle">1</div>
+                <small>Informações Básicas</small>
+            </div>
+            <div class="progress-step">
+                <div class="progress-circle">2</div>
+                <small>Detalhes Técnicos</small>
+            </div>
+            <div class="progress-step">
+                <div class="progress-circle">3</div>
+                <small>Documentos</small>
+            </div>
+        </div>
+        
+        <form id="pm05Form" method="POST" enctype="multipart/form-data" action="{{ url_for('criar_pm05') }}">
+            <!-- Etapa 1: Informações Básicas -->
+            <div class="form-step active" id="step1">
+                <div class="step-header">
+                    <div class="step-number">1</div>
+                    <div>
+                        <h5 class="mb-1">Informações Básicas</h5>
+                        <p class="text-muted mb-0">Dados principais do item PM05</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="fas fa-hashtag input-icon"></i>
+                            <label class="form-label required-field">Número PM05</label>
+                            <input type="text" class="form-control" name="numero_pm05" required
+                                   placeholder="Ex: PM05-2024-001">
+                            <div class="form-help">Código único de identificação do PM05</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="fas fa-file-invoice input-icon"></i>
+                            <label class="form-label required-field">Número da Invoice</label>
+                            <input type="text" class="form-control" name="numero_invoice" required
+                                   placeholder="Ex: INV-2024-0123">
+                            <div class="form-help">Número da fatura de envio</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="input-group-custom">
+                            <i class="fas fa-align-left input-icon"></i>
+                            <label class="form-label required-field">Descrição do Equipamento</label>
+                            <textarea class="form-control" name="descricao" rows="3" required
+                                      placeholder="Descreva o equipamento e o problema identificado..."></textarea>
+                            <div class="form-help">Descrição detalhada do equipamento e motivo do reparo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="input-group-custom">
+                            <i class="fas fa-barcode input-icon"></i>
+                            <label class="form-label required-field">Catálogo de Envio</label>
+                            <input type="text" class="form-control" name="catalog_envio" required
+                                   placeholder="Ex: CAT-ENV-001">
+                            <div class="form-help">Código do catálogo para envio</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group-custom">
+                            <i class="fas fa-barcode input-icon"></i>
+                            <label class="form-label">Catálogo ERSA</label>
+                            <input type="text" class="form-control" name="catalog_ersa"
+                                   placeholder="Ex: ERSA-CAT-001">
+                            <div class="form-help">Código ERSA (se aplicável)</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="input-group-custom">
+                            <i class="fas fa-cubes input-icon"></i>
+                            <label class="form-label required-field">Quantidade</label>
+                            <input type="number" class="form-control" name="quantidade" required min="1" value="1">
+                            <div class="form-help">Quantidade de itens enviados</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-end mt-4">
+                    <button type="button" class="btn-action btn-primary-custom" onclick="nextStep(2)">
+                        <i class="fas fa-arrow-right"></i> Próximo
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Etapa 2: Detalhes Técnicos -->
+            <div class="form-step" id="step2" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">2</div>
+                    <div>
+                        <h5 class="mb-1">Detalhes Técnicos</h5>
+                        <p class="text-muted mb-0">Especificações e informações do fornecedor</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group-custom auto-suggest">
+                            <i class="fas fa-building input-icon"></i>
+                            <label class="form-label required-field">Fornecedor</label>
+                            <input type="text" class="form-control" name="fornecedor" required
+                                   placeholder="Nome do fornecedor responsável pelo reparo"
+                                   autocomplete="off">
+                            <div class="suggest-dropdown" id="fornecedorSuggestions"></div>
+                            <div class="form-help">Empresa responsável pelo reparo</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="fas fa-calendar-alt input-icon"></i>
+                            <label class="form-label required-field">Data de Envio</label>
+                            <input type="date" class="form-control" name="data_envio" required
+                                   value="{{ today_date }}">
+                            <div class="form-help">Data em que o equipamento foi enviado</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="input-group-custom">
+                            <i class="fas fa-cogs input-icon"></i>
+                            <label class="form-label">Especificação Técnica</label>
+                            <textarea class="form-control" name="spec" rows="4"
+                                      placeholder="Especificações técnicas, modelo, série, características especiais..."></textarea>
+                            <div class="form-help">Informações técnicas detalhadas do equipamento</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="fas fa-file-invoice input-icon"></i>
+                            <label class="form-label">NF de Saída</label>
+                            <input type="text" class="form-control" name="nf_saida"
+                                   placeholder="Número da nota fiscal de saída">
+                            <div class="form-help">Nota fiscal para envio ao fornecedor</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="input-group-custom">
+                            <i class="fas fa-dollar-sign input-icon"></i>
+                            <label class="form-label">Valor do Reparo</label>
+                            <input type="number" class="form-control" name="valor_reparo" step="0.01" min="0"
+                                   placeholder="0.00">
+                            <div class="form-help">Valor estimado ou contratado para o reparo</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <div class="input-group-custom">
+                            <i class="fas fa-sticky-note input-icon"></i>
+                            <label class="form-label">Observações Iniciais</label>
+                            <textarea class="form-control" name="observacoes" rows="3"
+                                      placeholder="Observações sobre o estado do equipamento, problemas identificados, instruções especiais..."></textarea>
+                            <div class="form-help">Informações adicionais sobre o envio</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn-action btn-secondary-custom" onclick="prevStep(1)">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button type="button" class="btn-action btn-primary-custom" onclick="nextStep(3)">
+                        <i class="fas fa-arrow-right"></i> Próximo
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Etapa 3: Documentos -->
+            <div class="form-step" id="step3" style="display: none;">
+                <div class="step-header">
+                    <div class="step-number">3</div>
+                    <div>
+                        <h5 class="mb-1">Documentos e Anexos</h5>
+                        <p class="text-muted mb-0">Upload de documentos relacionados ao PM05</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <label class="form-label">Anexar Documentos</label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt fa-3x text-primary mb-3"></i>
+                            <h5>Arraste arquivos aqui ou clique para selecionar</h5>
+                            <p class="text-muted mb-0">
+                                Formatos aceitos: PDF, JPG, PNG, DOC, DOCX<br>
+                                Tamanho máximo: 10MB por arquivo
+                            </p>
+                            <input type="file" id="documentos" name="documentos" multiple 
+                                   accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" style="display: none;">
+                        </div>
+                        <div id="fileList" class="mt-3"></div>
+                        <div class="form-help">
+                            Anexe fotos do equipamento, laudos, orçamentos, notas fiscais ou outros documentos relevantes
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Documentos Recomendados:</strong>
+                            <ul class="mb-0 mt-2">
+                                <li>Fotos do equipamento antes do envio</li>
+                                <li>Nota fiscal de saída</li>
+                                <li>Orçamento do fornecedor</li>
+                                <li>Especificações técnicas</li>
+                                <li>Histórico de manutenções anteriores</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <button type="button" class="btn-action btn-secondary-custom" onclick="prevStep(2)">
+                        <i class="fas fa-arrow-left"></i> Anterior
+                    </button>
+                    <button type="submit" class="btn-action btn-primary-custom">
+                        <i class="fas fa-save"></i> Criar Item PM05
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Botões Flutuantes -->
+<div class="floating-actions">
+    <button type="button" class="floating-btn save" onclick="document.getElementById('pm05Form').submit()" 
+            title="Salvar Item PM05">
+        <i class="fas fa-save"></i>
+    </button>
+    <button type="button" class="floating-btn cancel" onclick="cancelar()" 
+            title="Cancelar">
+        <i class="fas fa-times"></i>
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentStep = 1;
+let uploadedFiles = [];
+
+// Lista de fornecedores sugeridos (pode vir do backend)
+const fornecedoresSugeridos = [
+    'Siemens Brasil',
+    'ABB Automação',
+    'Schneider Electric',
+    'WEG Equipamentos',
+    'Danfoss Power Solutions',
+    'Rockwell Automation',
+    'Phoenix Contact',
+    'Pepperl+Fuchs',
+    'Turck Brasil',
+    'Balluff Automação'
+];
+
+function nextStep(step) {
+    if (validateCurrentStep()) {
+        document.getElementById(`step${currentStep}`).style.display = 'none';
+        document.getElementById(`step${currentStep}`).classList.remove('active');
+        
+        document.getElementById(`step${step}`).style.display = 'block';
+        document.getElementById(`step${step}`).classList.add('active');
+        
+        updateProgressIndicator(currentStep, step);
+        currentStep = step;
+        
+        // Scroll para o topo
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+}
+
+function prevStep(step) {
+    document.getElementById(`step${currentStep}`).style.display = 'none';
+    document.getElementById(`step${currentStep}`).classList.remove('active');
+    
+    document.getElementById(`step${step}`).style.display = 'block';
+    document.getElementById(`step${step}`).classList.add('active');
+    
+    updateProgressIndicator(currentStep, step);
+    currentStep = step;
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function updateProgressIndicator(from, to) {
+    // Marcar etapas como completadas
+    for (let i = 1; i < to; i++) {
+        const stepElement = document.querySelector(`.progress-step:nth-child(${i})`);
+        stepElement.classList.add('completed');
+        stepElement.classList.remove('active');
+    }
+    
+    // Marcar etapa atual como ativa
+    const currentStepElement = document.querySelector(`.progress-step:nth-child(${to})`);
+    currentStepElement.classList.add('active');
+    currentStepElement.classList.remove('completed');
+    
+    // Remover ativa das próximas
+    for (let i = to + 1; i <= 3; i++) {
+        const stepElement = document.querySelector(`.progress-step:nth-child(${i})`);
+        stepElement.classList.remove('completed', 'active');
+    }
+}
+
+function validateCurrentStep() {
+    const currentStepElement = document.getElementById(`step${currentStep}`);
+    const requiredFields = currentStepElement.querySelectorAll('[required]');
+    
+    for (let field of requiredFields) {
+        if (!field.value.trim()) {
+            field.focus();
+            field.classList.add('is-invalid');
+            
+            // Remover classe de erro após correção
+            field.addEventListener('input', function() {
+                this.classList.remove('is-invalid');
+            }, { once: true });
+            
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+function cancelar() {
+    if (confirm('Deseja realmente cancelar? Todos os dados preenchidos serão perdidos.')) {
+        window.location.href = "{{ url_for('listar_pm05') }}";
+    }
+}
+
+// Auto-sugestão para fornecedores
+document.querySelector('input[name="fornecedor"]').addEventListener('input', function() {
+    const input = this.value.toLowerCase();
+    const suggestions = document.getElementById('fornecedorSuggestions');
+    
+    if (input.length < 2) {
+        suggestions.style.display = 'none';
+        return;
+    }
+    
+    const matches = fornecedoresSugeridos.filter(fornecedor => 
+        fornecedor.toLowerCase().includes(input)
+    );
+    
+    if (matches.length > 0) {
+        suggestions.innerHTML = matches.map(fornecedor => 
+            `<div class="suggest-item" onclick="selectFornecedor('${fornecedor}')">${fornecedor}</div>`
+        ).join('');
+        suggestions.style.display = 'block';
+    } else {
+        suggestions.style.display = 'none';
+    }
+});
+
+function selectFornecedor(fornecedor) {
+    document.querySelector('input[name="fornecedor"]').value = fornecedor;
+    document.getElementById('fornecedorSuggestions').style.display = 'none';
+}
+
+// Fechar sugestões ao clicar fora
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.auto-suggest')) {
+        document.getElementById('fornecedorSuggestions').style.display = 'none';
+    }
+});
+
+// Upload de arquivos
+const uploadArea = document.getElementById('uploadArea');
+const fileInput = document.getElementById('documentos');
+const fileList = document.getElementById('fileList');
+
+uploadArea.addEventListener('click', () => fileInput.click());
+
+uploadArea.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    uploadArea.classList.add('dragover');
+});
+
+uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('dragover');
+});
+
+uploadArea.addEventListener('drop', (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove('dragover');
+    const files = Array.from(e.dataTransfer.files);
+    handleFiles(files);
+});
+
+fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    handleFiles(files);
+});
+
+function handleFiles(files) {
+    files.forEach(file => {
+        if (validateFile(file)) {
+            uploadedFiles.push(file);
+            displayFile(file);
+        }
+    });
+}
+
+function validateFile(file) {
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 
+                         'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (!allowedTypes.includes(file.type)) {
+        alert(`Tipo de arquivo não permitido: ${file.name}`);
+        return false;
+    }
+    
+    if (file.size > maxSize) {
+        alert(`Arquivo muito grande: ${file.name}. Máximo 10MB.`);
+        return false;
+    }
+    
+    return true;
+}
+
+function displayFile(file) {
+    const fileDiv = document.createElement('div');
+    fileDiv.className = 'file-preview';
+    fileDiv.innerHTML = `
+        <div class="file-icon">
+            <i class="fas fa-${getFileIcon(file.type)}"></i>
+        </div>
+        <div class="flex-grow-1">
+            <div class="fw-bold">${file.name}</div>
+            <small class="text-muted">${formatFileSize(file.size)}</small>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeFile('${file.name}')">
+            <i class="fas fa-times"></i>
+        </button>
+    `;
+    fileList.appendChild(fileDiv);
+}
+
+function getFileIcon(type) {
+    if (type.includes('pdf')) return 'file-pdf';
+    if (type.includes('image')) return 'file-image';
+    if (type.includes('word')) return 'file-word';
+    return 'file';
+}
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+function removeFile(fileName) {
+    uploadedFiles = uploadedFiles.filter(file => file.name !== fileName);
+    
+    // Atualizar input file
+    const dt = new DataTransfer();
+    uploadedFiles.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+    
+    // Remover da visualização
+    const filePreview = Array.from(fileList.children).find(div => 
+        div.querySelector('.fw-bold').textContent === fileName
+    );
+    if (filePreview) {
+        filePreview.remove();
+    }
+}
+
+// Submissão do formulário
+document.getElementById('pm05Form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    if (!validateCurrentStep()) {
+        return;
+    }
+    
+    const submitButton = this.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    submitButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Criando...';
+    
+    // Atualizar arquivos no input
+    const dt = new DataTransfer();
+    uploadedFiles.forEach(file => dt.items.add(file));
+    fileInput.files = dt.files;
+    
+    // Submeter formulário
+    this.submit();
+});
+
+// Atalhos de teclado
+document.addEventListener('keydown', function(e) {
+    if (e.ctrlKey && e.key === 's') {
+        e.preventDefault();
+        document.getElementById('pm05Form').submit();
+    }
+    
+    if (e.key === 'Escape') {
+        cancelar();
+    }
+});
+
+// Auto-salvar no localStorage (opcional)
+function autoSave() {
+    const formData = new FormData(document.getElementById('pm05Form'));
+    const data = {};
+    for (let [key, value] of formData.entries()) {
+        if (key !== 'documentos') {
+            data[key] = value;
+        }
+    }
+    localStorage.setItem('pm05_draft', JSON.stringify(data));
+}
+
+// Carregar rascunho
+function loadDraft() {
+    const draft = localStorage.getItem('pm05_draft');
+    if (draft && confirm('Deseja carregar o rascunho salvo?')) {
+        const data = JSON.parse(draft);
+        for (let [key, value] of Object.entries(data)) {
+            const field = document.querySelector(`[name="${key}"]`);
+            if (field) {
+                field.value = value;
+            }
+        }
+    }
+}
+
+// Auto-salvar a cada 30 segundos
+setInterval(autoSave, 30000);
+
+// Carregar rascunho ao inicializar
+window.addEventListener('load', loadDraft);
+
+// Limpar rascunho ao submeter com sucesso
+document.getElementById('pm05Form').addEventListener('submit', function() {
+    localStorage.removeItem('pm05_draft');
+});
+</script>
+{% endblock %}
