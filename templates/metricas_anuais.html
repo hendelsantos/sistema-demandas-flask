@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block title %}Métricas Anuais - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2><i class="fas fa-chart-bar"></i> Métricas Anuais Comparativas</h2>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body p-3">
+                <label class="form-label fw-bold">
+                    <i class="fas fa-calendar-alt"></i> Selecionar Anos:
+                </label>
+                <div class="d-flex gap-2">
+                    <select id="anos-select" class="form-select form-select-sm" multiple>
+                        {% for ano in anos_disponiveis %}
+                            <option value="{{ ano }}" {% if ano in anos_selecionados %}selected{% endif %}>
+                                {{ ano }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <button class="btn btn-outline-primary btn-sm" onclick="atualizarComparacao()">
+                        <i class="fas fa-sync"></i>
+                    </button>
+                </div>
+                <small class="text-muted">Ctrl+Click para múltipla seleção</small>
+            </div>
+        </div>
+    </div>
+</div>
+<hr>
+
+<!-- Cards de Comparação -->
+<div class="row mb-4">
+    {% for ano, dados in dados.items() %}
+    <div class="col-md-4 mb-3">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar"></i> Ano {{ ano }}
+                    {% if ano == ano_atual %}
+                        <span class="badge bg-light text-primary ms-2">Atual</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ dados.total_demandas }}</h4>
+                        <small class="text-muted">Total Demandas</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ dados.demandas_finalizadas }}</h4>
+                        <small class="text-muted">Finalizadas</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success" style="width: {{ dados.taxa_finalizacao }}%">
+                        {{ dados.taxa_finalizacao }}%
+                    </div>
+                </div>
+                <small class="text-muted">Taxa de Finalização</small>
+                
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <strong>Valores Financeiros:</strong>
+                        <br>
+                        <small>Orçado: <span class="text-info">R$ {{ "%.2f"|format(dados.valor_total_pedidos) }}</span></small>
+                        <br>
+                        <small>Realizado: <span class="text-success">R$ {{ "%.2f"|format(dados.valor_total_recebido) }}</span></small>
+                        <br>
+                        <small>Economia: <span class="text-primary">R$ {{ "%.2f"|format(dados.economia_gerada) }}</span></small>
+                    </div>
+                </div>
+                
+                <div class="mt-3">
+                    <a href="{{ url_for('relatorio_fechamento_anual', ano=ano) }}" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-file-alt"></i> Relatório Completo
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Gráficos Comparativos -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Demandas por Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartDemandas" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-area"></i> Valores por Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="chartValores" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabela Resumo -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-table"></i> Resumo Comparativo</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Ano</th>
+                                <th>Total Demandas</th>
+                                <th>Finalizadas</th>
+                                <th>Taxa Finalização</th>
+                                <th>Valor Orçado</th>
+                                <th>Valor Realizado</th>
+                                <th>Economia</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ano, dados in dados.items() %}
+                            <tr>
+                                <td>
+                                    <strong>{{ ano }}</strong>
+                                    {% if ano == ano_atual %}
+                                        <span class="badge bg-primary ms-1">Atual</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ dados.total_demandas }}</td>
+                                <td>{{ dados.demandas_finalizadas }}</td>
+                                <td>
+                                    <span class="badge bg-{{ 'success' if dados.taxa_finalizacao >= 80 else 'warning' if dados.taxa_finalizacao >= 60 else 'danger' }}">
+                                        {{ dados.taxa_finalizacao }}%
+                                    </span>
+                                </td>
+                                <td>R$ {{ "%.2f"|format(dados.valor_total_pedidos) }}</td>
+                                <td>R$ {{ "%.2f"|format(dados.valor_total_recebido) }}</td>
+                                <td>
+                                    <span class="text-{{ 'success' if dados.economia_gerada > 0 else 'danger' }}">
+                                        R$ {{ "%.2f"|format(dados.economia_gerada) }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('dashboard', ano=ano) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{{ url_for('listar_demandas', ano=ano) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-list"></i>
+                                    </a>
+                                    <a href="{{ url_for('relatorio_fechamento_anual', ano=ano) }}" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-file-alt"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Função para atualizar comparação
+    function atualizarComparacao() {
+        const anosSelect = document.getElementById('anos-select');
+        const anosSelecionados = Array.from(anosSelect.selectedOptions).map(option => option.value);
+        
+        if (anosSelecionados.length === 0) {
+            alert('Selecione pelo menos um ano para comparação');
+            return;
+        }
+        
+        const params = anosSelecionados.map(ano => `anos=${ano}`).join('&');
+        window.location.href = `{{ url_for('metricas_anuais') }}?${params}`;
+    }
+    
+    // Dados para os gráficos
+    const dadosAnos = {{ dados|tojson|safe }};
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Cores para os anos
+    const cores = [
+        'rgba(54, 162, 235, 0.8)',   // Azul
+        'rgba(255, 99, 132, 0.8)',   // Vermelho
+        'rgba(75, 192, 192, 0.8)',   // Verde
+        'rgba(255, 206, 86, 0.8)',   // Amarelo
+        'rgba(153, 102, 255, 0.8)',  // Roxo
+        'rgba(255, 159, 64, 0.8)'    // Laranja
+    ];
+    
+    // Gráfico de Demandas por Mês
+    const ctxDemandas = document.getElementById('chartDemandas').getContext('2d');
+    const datasets1 = [];
+    let colorIndex = 0;
+    
+    for (const [ano, dados] of Object.entries(dadosAnos)) {
+        datasets1.push({
+            label: `Ano ${ano}`,
+            data: dados.demandas_por_mes,
+            borderColor: cores[colorIndex],
+            backgroundColor: cores[colorIndex],
+            fill: false,
+            tension: 0.1
+        });
+        colorIndex++;
+    }
+    
+    new Chart(ctxDemandas, {
+        type: 'line',
+        data: {
+            labels: meses,
+            datasets: datasets1
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Número de Demandas'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Valores por Mês
+    const ctxValores = document.getElementById('chartValores').getContext('2d');
+    const datasets2 = [];
+    colorIndex = 0;
+    
+    for (const [ano, dados] of Object.entries(dadosAnos)) {
+        datasets2.push({
+            label: `Ano ${ano}`,
+            data: dados.valores || new Array(12).fill(0),
+            borderColor: cores[colorIndex],
+            backgroundColor: cores[colorIndex] + '40',
+            fill: true,
+            tension: 0.1
+        });
+        colorIndex++;
+    }
+    
+    new Chart(ctxValores, {
+        type: 'line',
+        data: {
+            labels: meses,
+            datasets: datasets2
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': R$ ' + context.parsed.y.toFixed(2);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Valor (R$)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

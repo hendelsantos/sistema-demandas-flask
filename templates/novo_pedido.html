@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Pedido - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-shopping-cart"></i> Novo Pedido</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <!-- Informações da Demanda -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Demanda Associada #{{ demanda.id }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Solicitante:</strong> {{ demanda.solicitante }}</p>
+                        <p><strong>Quantidade:</strong> {{ demanda.quantidade }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> <span class="badge bg-success">{{ demanda.status }}</span></p>
+                        <p><strong>Data Criação:</strong> {{ demanda.data_criacao.strftime('%d/%m/%Y') }}</p>
+                    </div>
+                </div>
+                <p><strong>Item:</strong> {{ demanda.descricao_item }}</p>
+            </div>
+        </div>
+        
+        <!-- Formulário do Pedido -->
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-plus"></i> Dados do Pedido</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="numero_po" class="form-label">Número da PO *</label>
+                                <input type="text" class="form-control" id="numero_po" name="numero_po" required
+                                       placeholder="Ex: PO-2025-001">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="fornecedor" class="form-label">Fornecedor</label>
+                                <input type="text" class="form-control" id="fornecedor" name="fornecedor"
+                                       placeholder="Nome do fornecedor">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="valor_total" class="form-label">Valor Total (R$)</label>
+                                <input type="number" step="0.01" class="form-control" id="valor_total" name="valor_total"
+                                       placeholder="0.00">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="mes_previsto_recebimento" class="form-label">Mês Previsto para Recebimento *</label>
+                                <input type="month" class="form-control" id="mes_previsto_recebimento" 
+                                       name="mes_previsto_recebimento" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="numero_nota_fiscal" class="form-label">Número da Nota Fiscal</label>
+                        <input type="text" class="form-control" id="numero_nota_fiscal" name="numero_nota_fiscal"
+                               placeholder="Pode ser preenchido posteriormente">
+                        <small class="text-muted">Este campo pode ser preenchido quando a nota fiscal for emitida</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('listar_pedidos') }}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times"></i> Cancelar
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> Criar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Informações Importantes</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>O pedido será vinculado à demanda #{{ demanda.id }}</li>
+                    <li>O número da PO é obrigatório para identificação</li>
+                    <li>O mês previsto será usado para gerar métricas financeiras</li>
+                    <li>O valor pode ser atualizado quando confirmar o recebimento</li>
+                    <li>A nota fiscal pode ser informada posteriormente</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Definir mês atual como padrão
+    document.addEventListener('DOMContentLoaded', function() {
+        const hoje = new Date();
+        const mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+        document.getElementById('mes_previsto_recebimento').value = mesAtual;
+    });
+    
+    // Validação do formulário
+    document.querySelector('form').addEventListener('submit', function(e) {
+        const numeroPo = document.getElementById('numero_po').value.trim();
+        const mesPrevisao = document.getElementById('mes_previsto_recebimento').value;
+        
+        if (!numeroPo) {
+            e.preventDefault();
+            alert('O número da PO é obrigatório.');
+            return false;
+        }
+        
+        if (!mesPrevisao) {
+            e.preventDefault();
+            alert('O mês previsto para recebimento é obrigatório.');
+            return false;
+        }
+    });
+    
+    // Formatação do valor em tempo real
+    document.getElementById('valor_total').addEventListener('input', function(e) {
+        let valor = e.target.value;
+        if (valor && !isNaN(valor)) {
+            // Formatar como moeda
+            e.target.style.color = '#28a745';
+        } else {
+            e.target.style.color = '';
+        }
+    });
+</script>
+{% endblock %}

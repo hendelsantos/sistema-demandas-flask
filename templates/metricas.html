@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block title %}Métricas - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-chart-line"></i> Métricas Financeiras</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5>Valor Total Previsto</h5>
+                <h3>R$ <span id="totalPrevisto">0,00</span></h3>
+                <small>Soma de todas as previsões</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5>Valor Total Recebido</h5>
+                <h3>R$ <span id="totalRecebido">0,00</span></h3>
+                <small>Soma de todos os recebimentos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5>Diferença</h5>
+                <h3>R$ <span id="diferenca">0,00</span></h3>
+                <small>Recebido vs Previsto</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Gráfico Previsto vs Recebido por Mês</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="metricasChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-calendar-alt"></i> Previsões Futuras</h5>
+            </div>
+            <div class="card-body">
+                <div id="previsoesConteudo">
+                    <p class="text-muted">Carregando previsões...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-table"></i> Previsões por Mês</h5>
+            </div>
+            <div class="card-body">
+                {% if previsoes %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Mês</th>
+                                    <th>Valor Previsto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mes, valor in previsoes %}
+                                <tr>
+                                    <td>{{ mes }}</td>
+                                    <td>R$ {{ "%.2f"|format(valor) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhuma previsão cadastrada ainda.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-table"></i> Recebimentos por Mês</h5>
+            </div>
+            <div class="card-body">
+                {% if recebimentos %}
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Mês</th>
+                                    <th>Valor Recebido</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mes, valor in recebimentos %}
+                                <tr>
+                                    <td>{{ mes }}</td>
+                                    <td>R$ {{ "%.2f"|format(valor) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="text-muted">Nenhum recebimento registrado ainda.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> Como Interpretar as Métricas</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Previsões</h6>
+                        <ul>
+                            <li>Baseadas no mês previsto de recebimento dos pedidos</li>
+                            <li>Valores estimados conforme POs emitidas</li>
+                            <li>Ajudam no planejamento de fluxo de caixa</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Recebimentos</h6>
+                        <ul>
+                            <li>Valores reais confirmados no recebimento</li>
+                            <li>Data do recebimento real (pode diferir da previsão)</li>
+                            <li>Valores podem ser diferentes do previsto</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Carregar dados das métricas
+    fetch('/api/metricas_chart')
+        .then(response => response.json())
+        .then(data => {
+            // Atualizar totais
+            const totalPrevisto = data.previstos.reduce((a, b) => a + b, 0);
+            const totalRecebido = data.recebidos.reduce((a, b) => a + b, 0);
+            const diferenca = totalRecebido - totalPrevisto;
+            
+            document.getElementById('totalPrevisto').textContent = totalPrevisto.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('totalRecebido').textContent = totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('diferenca').textContent = diferenca.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            
+            // Atualizar cor da diferença
+            const diferencaElement = document.getElementById('diferenca');
+            const cardDiferenca = diferencaElement.closest('.card');
+            if (diferenca >= 0) {
+                cardDiferenca.className = 'card bg-success text-white';
+            } else {
+                cardDiferenca.className = 'card bg-danger text-white';
+            }
+            
+            // Gerar gráfico
+            const ctx = document.getElementById('metricasChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.meses,
+                    datasets: [
+                        {
+                            label: 'Previsto',
+                            data: data.previstos,
+                            backgroundColor: 'rgba(54, 162, 235, 0.8)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Recebido',
+                            data: data.recebidos,
+                            backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return 'R$ ' + value.toLocaleString('pt-BR');
+                                }
+                            }
+                        }
+                    },
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    }
+                }
+            });
+            
+            // Mostrar previsões futuras
+            mostrarPrevisoesFuturas(data);
+        })
+        .catch(error => {
+            console.error('Erro ao carregar métricas:', error);
+            document.getElementById('metricasChart').innerHTML = '<p class="text-danger">Erro ao carregar gráfico</p>';
+        });
+    
+    function mostrarPrevisoesFuturas(data) {
+        const hoje = new Date();
+        const mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+        
+        let previsoesHTML = '';
+        let encontrouFutura = false;
+        
+        for (let i = 0; i < data.meses.length; i++) {
+            if (data.meses[i] >= mesAtual && data.previstos[i] > 0) {
+                encontrouFutura = true;
+                const mes = new Date(data.meses[i] + '-01').toLocaleDateString('pt-BR', {month: 'long', year: 'numeric'});
+                previsoesHTML += `
+                    <div class="d-flex justify-content-between border-bottom py-2">
+                        <span>${mes}</span>
+                        <strong>R$ ${data.previstos[i].toLocaleString('pt-BR', {minimumFractionDigits: 2})}</strong>
+                    </div>
+                `;
+            }
+        }
+        
+        if (!encontrouFutura) {
+            previsoesHTML = '<p class="text-muted">Nenhuma previsão futura cadastrada.</p>';
+        }
+        
+        document.getElementById('previsoesConteudo').innerHTML = previsoesHTML;
+    }
+</script>
+{% endblock %}

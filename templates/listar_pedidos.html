@@ -1,0 +1,255 @@
+{% extends "base.html" %}
+
+{% block title %}Pedidos - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="fas fa-shopping-cart"></i> Lista de Pedidos</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        {% if pedidos %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Demanda ID</th>
+                            <th>Solicitante</th>
+                            <th>Item</th>
+                            <th>PO</th>
+                            <th>Fornecedor</th>
+                            <th>Valor Total</th>
+                            <th>Previsão Recebimento</th>
+                            <th>Nota Fiscal</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for pedido in pedidos %}
+                        <tr>
+                            <td><strong>#{{ pedido.demanda.id }}</strong></td>
+                            <td>{{ pedido.demanda.solicitante }}</td>
+                            <td>
+                                <div class="text-truncate" style="max-width: 200px;" title="{{ pedido.demanda.descricao_item }}">
+                                    {{ pedido.demanda.descricao_item }}
+                                </div>
+                            </td>
+                            <td>{{ pedido.numero_po or 'N/A' }}</td>
+                            <td>{{ pedido.fornecedor or 'N/A' }}</td>
+                            <td>
+                                {% if pedido.valor_total %}
+                                    <strong>R$ {{ "%.2f"|format(pedido.valor_total) }}</strong>
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td>{{ pedido.mes_previsto_recebimento or 'N/A' }}</td>
+                            <td>
+                                {% if pedido.data_recebimento_nf and pedido.numero_nota_fiscal %}
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-receipt text-success me-2"></i>
+                                        <div>
+                                            <strong>{{ pedido.numero_nota_fiscal }}</strong>
+                                            <br><small class="text-muted">{{ pedido.data_recebimento_nf.strftime('%d/%m/%Y') }}</small>
+                                        </div>
+                                    </div>
+                                {% elif pedido.numero_nota_fiscal %}
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-alt text-warning me-2"></i>
+                                        <span class="text-muted">{{ pedido.numero_nota_fiscal }}</span>
+                                    </div>
+                                {% else %}
+                                    <span class="text-muted">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if pedido.data_recebimento %}
+                                    <span class="badge bg-success">Recebido</span>
+                                    <br><small>{{ pedido.data_recebimento.strftime('%d/%m/%Y') }}</small>
+                                {% else %}
+                                    <span class="badge bg-warning text-dark">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm" role="group">
+                                    <a href="{{ url_for('detalhes_demanda', id=pedido.demanda.id) }}" 
+                                       class="btn btn-outline-primary" title="Ver Demanda">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if not pedido.data_recebimento %}
+                                        <button type="button" class="btn btn-outline-success" 
+                                                onclick="confirmarRecebimento({{ pedido.id }})" title="Confirmar Recebimento">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                    {% elif pedido.data_recebimento and not pedido.data_recebimento_nf %}
+                                        <button type="button" class="btn btn-outline-dark" 
+                                                onclick="confirmarRecebimentoNF({{ pedido.id }})" title="Confirmar Recebimento NF">
+                                            <i class="fas fa-receipt"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Nenhum pedido encontrado</h4>
+                <p class="text-muted">Ainda não há pedidos cadastrados no sistema.</p>
+                <a href="{{ url_for('listar_demandas', status='PO Emitido') }}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> Ver Demandas com PO Emitido
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if pedidos %}
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-chart-bar"></i> Resumo de Pedidos</h6>
+            </div>
+            <div class="card-body">
+                {% set total_pedidos = pedidos|length %}
+                {% set pedidos_recebidos = pedidos|selectattr('data_recebimento')|list|length %}
+                {% set pedidos_pendentes = total_pedidos - pedidos_recebidos %}
+                {% set valor_total = pedidos|sum(attribute='valor_total') or 0 %}
+                {% set valor_recebido = pedidos|selectattr('data_recebimento')|sum(attribute='valor_recebido') or 0 %}
+                
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h4 class="text-primary">{{ total_pedidos }}</h4>
+                        <small>Total de Pedidos</small>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-success">{{ pedidos_recebidos }}</h4>
+                        <small>Recebidos</small>
+                    </div>
+                </div>
+                <hr>
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h5 class="text-info">R$ {{ "%.2f"|format(valor_total) }}</h5>
+                        <small>Valor Total</small>
+                    </div>
+                    <div class="col-6">
+                        <h5 class="text-success">R$ {{ "%.2f"|format(valor_recebido) }}</h5>
+                        <small>Valor Recebido</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6><i class="fas fa-info-circle"></i> Informações</h6>
+            </div>
+            <div class="card-body">
+                <ul class="mb-0">
+                    <li>Pedidos são criados automaticamente quando uma demanda tem PO emitido</li>
+                    <li>Use o botão <i class="fas fa-check text-success"></i> para confirmar o recebimento</li>
+                    <li>Ao confirmar o recebimento, informe o valor real recebido</li>
+                    <li>Os valores são usados para gerar as métricas financeiras</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal para confirmar recebimento -->
+<div class="modal fade" id="modalRecebimento" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Recebimento</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRecebimento" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="valor_recebido" class="form-label">Valor Recebido (R$)</label>
+                        <input type="number" step="0.01" class="form-control" id="valor_recebido" name="valor_recebido" required>
+                        <small class="text-muted">Informe o valor real recebido (pode ser diferente do valor previsto)</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Confirmar Recebimento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar recebimento da NF -->
+<div class="modal fade" id="modalRecebimentoNF" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Recebimento da Nota Fiscal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formRecebimentoNF" method="POST">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="numero_nota_fiscal" class="form-label">Número da Nota Fiscal:</label>
+                        <input type="text" class="form-control" id="numero_nota_fiscal" name="numero_nota_fiscal" required>
+                    </div>
+                    <p class="text-muted">
+                        <i class="fas fa-info-circle"></i> 
+                        A data de recebimento da NF será registrada automaticamente.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-dark">Confirmar Recebimento NF</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmarRecebimento(pedidoId) {
+        const modal = new bootstrap.Modal(document.getElementById('modalRecebimento'));
+        const form = document.getElementById('formRecebimento');
+        
+        // Definir a action do formulário
+        form.action = `/confirmar_recebimento/${pedidoId}`;
+        
+        // Limpar o campo de valor
+        document.getElementById('valor_recebido').value = '';
+        
+        // Mostrar o modal
+        modal.show();
+    }
+    
+    function confirmarRecebimentoNF(pedidoId) {
+        const modal = new bootstrap.Modal(document.getElementById('modalRecebimentoNF'));
+        const form = document.getElementById('formRecebimentoNF');
+        
+        // Definir a action do formulário
+        form.action = `/confirmar_recebimento_nf/${pedidoId}`;
+        
+        // Limpar o campo de número da NF
+        document.getElementById('numero_nota_fiscal').value = '';
+        
+        // Mostrar o modal
+        modal.show();
+    }
+</script>
+{% endblock %}

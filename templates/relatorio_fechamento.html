@@ -1,0 +1,420 @@
+{% extends "base.html" %}
+
+{% block title %}Relatório de Fechamento {{ relatorio.ano }} - Sistema de Controle de Demandas{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <h2><i class="fas fa-file-alt"></i> Relatório de Fechamento {{ relatorio.ano }}</h2>
+        <p class="text-muted">Período: {{ relatorio.periodo }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <button class="btn btn-outline-primary" onclick="window.print()">
+            <i class="fas fa-print"></i> Imprimir
+        </button>
+        <a href="{{ url_for('metricas_anuais') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Voltar
+        </a>
+    </div>
+</div>
+<hr>
+
+<!-- Resumo Executivo -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4><i class="fas fa-chart-pie"></i> Resumo Executivo</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-primary">{{ relatorio.resumo_geral.total_demandas }}</h3>
+                        <p class="mb-0">Total de Demandas</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-success">{{ relatorio.resumo_geral.demandas_finalizadas }}</h3>
+                        <p class="mb-0">Finalizadas</p>
+                        <small class="text-muted">({{ relatorio.resumo_geral.taxa_finalizacao }}%)</small>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-warning">{{ relatorio.resumo_geral.demandas_pendentes }}</h3>
+                        <p class="mb-0">Pendentes</p>
+                    </div>
+                    <div class="col-md-3 text-center">
+                        <h3 class="text-info">{{ relatorio.resumo_geral.percentual_economia }}%</h3>
+                        <p class="mb-0">Economia Gerada</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-primary">R$ {{ "%.2f"|format(relatorio.resumo_geral.valor_total_orcado) }}</h4>
+                        <p class="mb-0">Valor Total Orçado</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-success">R$ {{ "%.2f"|format(relatorio.resumo_geral.valor_total_realizado) }}</h4>
+                        <p class="mb-0">Valor Total Realizado</p>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <h4 class="text-info">R$ {{ "%.2f"|format(relatorio.resumo_geral.economia_gerada) }}</h4>
+                        <p class="mb-0">Economia Total</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demandas por Status -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-bar"></i> Demandas por Status</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="statusChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-list-ol"></i> Distribuição por Status</h5>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Quantidade</th>
+                            <th>Percentual</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for status, quantidade in relatorio.demandas_por_status.items() %}
+                        <tr>
+                            <td>
+                                {% if status == 'Aberto' %}
+                                    <span class="badge bg-warning text-dark">{{ status }}</span>
+                                {% elif status == 'Em Cotação' %}
+                                    <span class="badge bg-info">{{ status }}</span>
+                                {% elif status == 'PR Criada' %}
+                                    <span class="badge bg-secondary">{{ status }}</span>
+                                {% elif status == 'PO Emitido' %}
+                                    <span class="badge bg-primary">{{ status }}</span>
+                                {% elif status == 'NF Recebida' %}
+                                    <span class="badge bg-success">{{ status }}</span>
+                                {% else %}
+                                    <span class="badge bg-dark">{{ status }}</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ quantidade }}</td>
+                            <td>
+                                {% set percentual = (quantidade / relatorio.resumo_geral.total_demandas * 100) if relatorio.resumo_geral.total_demandas > 0 else 0 %}
+                                {{ "%.1f"|format(percentual) }}%
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Top Solicitantes -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-users"></i> Top 10 Solicitantes</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Solicitante</th>
+                                <th>Total de Demandas</th>
+                                <th>Valor Total</th>
+                                <th>Média por Demanda</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for solicitante_data in relatorio.top_solicitantes %}
+                            <tr>
+                                <td>{{ loop.index }}</td>
+                                <td>{{ solicitante_data[0] }}</td>
+                                <td>{{ solicitante_data[1] }}</td>
+                                <td>R$ {{ "%.2f"|format(solicitante_data[2] or 0) }}</td>
+                                <td>
+                                    {% if solicitante_data[1] > 0 %}
+                                        R$ {{ "%.2f"|format((solicitante_data[2] or 0) / solicitante_data[1]) }}
+                                    {% else %}
+                                        R$ 0,00
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Mensal -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-chart-line"></i> Performance Mensal</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demandas Pendentes -->
+{% if relatorio.demandas_pendentes_lista %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-warning">
+            <div class="card-header bg-warning">
+                <h5><i class="fas fa-exclamation-triangle"></i> Demandas Pendentes (Últimas 20)</h5>
+                <small>Demandas que não foram finalizadas até o final do ano</small>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Número</th>
+                                <th>Solicitante</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th>Data Criação</th>
+                                <th>Dias Pendente</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for demanda in relatorio.demandas_pendentes_lista %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('detalhes_demanda', id=demanda.id) }}">
+                                        {{ demanda.numero_demanda or ('%04d'|format(demanda.id)) }}
+                                    </a>
+                                </td>
+                                <td>{{ demanda.solicitante }}</td>
+                                <td>{{ demanda.descricao_item[:50] }}{% if demanda.descricao_item|length > 50 %}...{% endif %}</td>
+                                <td>
+                                    {% if demanda.status == 'Aberto' %}
+                                        <span class="badge bg-warning text-dark">{{ demanda.status }}</span>
+                                    {% elif demanda.status == 'Em Cotação' %}
+                                        <span class="badge bg-info">{{ demanda.status }}</span>
+                                    {% elif demanda.status == 'PR Criada' %}
+                                        <span class="badge bg-secondary">{{ demanda.status }}</span>
+                                    {% elif demanda.status == 'PO Emitido' %}
+                                        <span class="badge bg-primary">{{ demanda.status }}</span>
+                                    {% else %}
+                                        <span class="badge bg-dark">{{ demanda.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ demanda.data_criacao.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% set fim_ano = demanda.data_criacao.replace(month=12, day=31) %}
+                                    {% set dias_pendente = (fim_ano - demanda.data_criacao).days %}
+                                    {{ dias_pendente }} dias
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Observações e Recomendações -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h5><i class="fas fa-lightbulb"></i> Observações e Recomendações</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li><i class="fas fa-check-circle text-success"></i> 
+                        <strong>Taxa de Finalização:</strong> 
+                        {% if relatorio.resumo_geral.taxa_finalizacao >= 80 %}
+                            Excelente performance com {{ relatorio.resumo_geral.taxa_finalizacao }}% de finalização.
+                        {% elif relatorio.resumo_geral.taxa_finalizacao >= 60 %}
+                            Boa performance com {{ relatorio.resumo_geral.taxa_finalizacao }}% de finalização. Pode ser melhorada.
+                        {% else %}
+                            Performance abaixo do esperado com {{ relatorio.resumo_geral.taxa_finalizacao }}% de finalização. Requer atenção.
+                        {% endif %}
+                    </li>
+                    
+                    <li class="mt-2"><i class="fas fa-dollar-sign text-success"></i> 
+                        <strong>Economia Gerada:</strong>
+                        {% if relatorio.resumo_geral.economia_gerada > 0 %}
+                            Economia positiva de R$ {{ "%.2f"|format(relatorio.resumo_geral.economia_gerada) }} ({{ relatorio.resumo_geral.percentual_economia }}%).
+                        {% else %}
+                            Não houve economia significativa este ano.
+                        {% endif %}
+                    </li>
+                    
+                    <li class="mt-2"><i class="fas fa-clock text-warning"></i> 
+                        <strong>Demandas Pendentes:</strong>
+                        {{ relatorio.resumo_geral.demandas_pendentes }} demandas ficaram pendentes para o próximo ano.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rodapé do Relatório -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <small class="text-muted">
+                    Relatório gerado automaticamente<br>
+                    Sistema de Controle de Demandas - Ano {{ relatorio.ano }}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Gráfico de Status
+    const statusData = {{ relatorio.demandas_por_status|tojson|safe }};
+    const statusLabels = Object.keys(statusData);
+    const statusValues = Object.values(statusData);
+    
+    const ctxStatus = document.getElementById('statusChart').getContext('2d');
+    new Chart(ctxStatus, {
+        type: 'doughnut',
+        data: {
+            labels: statusLabels,
+            datasets: [{
+                data: statusValues,
+                backgroundColor: [
+                    '#ffc107', // Aberto - Warning
+                    '#17a2b8', // Em Cotação - Info  
+                    '#6c757d', // PR Criada - Secondary
+                    '#007bff', // PO Emitido - Primary
+                    '#28a745', // NF Recebida - Success
+                    '#dc3545'  // Outros - Danger
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = statusValues.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.parsed + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Performance Mensal
+    const performanceData = {{ relatorio.performance_mensal|tojson|safe }};
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    // Organizar dados mensais
+    const demandasPorMes = new Array(12).fill(0);
+    const valoresPorMes = new Array(12).fill(0);
+    
+    performanceData.forEach(item => {
+        const mesIndex = item[0] - 1; // Converter 1-12 para 0-11
+        demandasPorMes[mesIndex] = item[1] || 0;
+        valoresPorMes[mesIndex] = item[2] || 0;
+    });
+    
+    const ctxPerformance = document.getElementById('performanceChart').getContext('2d');
+    new Chart(ctxPerformance, {
+        type: 'line',
+        data: {
+            labels: meses,
+            datasets: [{
+                label: 'Demandas',
+                data: demandasPorMes,
+                borderColor: 'rgba(54, 162, 235, 1)',
+                backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                fill: true,
+                yAxisID: 'y'
+            }, {
+                label: 'Valor (R$)',
+                data: valoresPorMes,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                fill: true,
+                yAxisID: 'y1'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Número de Demandas'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    title: {
+                        display: true,
+                        text: 'Valor (R$)'
+                    },
+                    grid: {
+                        drawOnChartArea: false,
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toFixed(0);
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
