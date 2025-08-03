@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Auto Login Admin</title>
+</head>
+<body>
+    <h2>Fazendo login como admin...</h2>
+    <form id="loginForm" action="http://localhost:5003/login" method="POST">
+        <input type="hidden" name="username" value="admin">
+        <input type="hidden" name="password" value="admin123">
+    </form>
+    
+    <script>
+        // Submeter o formulário automaticamente
+        document.getElementById('loginForm').submit();
+    </script>
+</body>
+</html>

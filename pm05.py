@@ -30,6 +30,47 @@ def get_file_size(file):
     file.seek(0)  # Volta para o início
     return size
 
+def format_date_safe(date_obj, format_str='%d/%m/%Y'):
+    """Formata data de forma segura, tratando strings e objetos datetime"""
+    if not date_obj:
+        return 'N/A'
+    
+    if isinstance(date_obj, str):
+        try:
+            # Tentar converter string para datetime
+            date_obj = datetime.strptime(date_obj, '%Y-%m-%d')
+        except ValueError:
+            return date_obj  # Retorna a string original se não conseguir converter
+    
+    if hasattr(date_obj, 'strftime'):
+        return date_obj.strftime(format_str)
+    
+    return str(date_obj)
+
+def format_datetime_safe(datetime_obj, format_str='%d/%m/%Y às %H:%M'):
+    """Formata datetime de forma segura"""
+    if not datetime_obj:
+        return 'N/A'
+    
+    if isinstance(datetime_obj, str):
+        try:
+            # Tentar diferentes formatos
+            for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%d']:
+                try:
+                    datetime_obj = datetime.strptime(datetime_obj, fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                return datetime_obj  # Retorna a string original se não conseguir converter
+        except:
+            return datetime_obj
+    
+    if hasattr(datetime_obj, 'strftime'):
+        return datetime_obj.strftime(format_str)
+    
+    return str(datetime_obj)
+
 def criar_tabelas_pm05(db):
     """Cria as tabelas necessárias para o PM05"""
     with db.engine.connect() as conn:
@@ -418,13 +459,45 @@ def registrar_rotas_pm05(app, db):
                 # Calcular dias em reparo
                 days_in_repair = 0
                 if item.data_envio and item.status == 'EM_REPARO':
-                    days_in_repair = (datetime.now().date() - item.data_envio.date()).days
+                    # Garantir que temos uma data, não uma string
+                    if isinstance(item.data_envio, str):
+                        data_envio = datetime.strptime(item.data_envio, '%Y-%m-%d').date()
+                    elif hasattr(item.data_envio, 'date'):
+                        data_envio = item.data_envio.date()
+                    else:
+                        data_envio = item.data_envio
+                    
+                    days_in_repair = (datetime.now().date() - data_envio).days
+                
+                # Calcular estatísticas específicas do item
+                stats_result = conn.execute(text("""
+                    SELECT 
+                        COUNT(*) as mesmo_fornecedor,
+                        COALESCE(AVG(
+                            CASE 
+                                WHEN status = 'FINALIZADO' AND data_envio IS NOT NULL AND data_retorno IS NOT NULL
+                                THEN julianday(data_retorno) - julianday(data_envio)
+                                ELSE NULL
+                            END
+                        ), 0) as tempo_medio
+                    FROM pm05_items 
+                    WHERE fornecedor = :fornecedor AND id != :item_id
+                """), {"fornecedor": item.fornecedor, "item_id": item_id})
+                
+                stats_row = stats_result.fetchone()
+                stats = {
+                    'mesmo_fornecedor': stats_row[0] if stats_row[0] else 0,
+                    'tempo_medio': round(stats_row[1]) if stats_row[1] else 0
+                }
                 
                 return render_template('detalhes_pm05.html', 
                                      item=item, 
                                      historico=historico,
                                      days_in_repair=days_in_repair,
-                                     today_date=datetime.now().strftime('%Y-%m-%d'))
+                                     today_date=datetime.now().strftime('%Y-%m-%d'),
+                                     stats=stats,
+                                     format_date=format_date_safe,
+                                     format_datetime=format_datetime_safe)
                 
         except Exception as e:
             print(f"Erro ao carregar detalhes PM05: {e}")
@@ -453,7 +526,15 @@ def registrar_rotas_pm05(app, db):
                 # Calcular dias em reparo
                 days_in_repair = 0
                 if item.data_envio and item.status == 'EM_REPARO':
-                    days_in_repair = (datetime.now().date() - item.data_envio.date()).days
+                    # Garantir que temos uma data, não uma string
+                    if isinstance(item.data_envio, str):
+                        data_envio = datetime.strptime(item.data_envio, '%Y-%m-%d').date()
+                    elif hasattr(item.data_envio, 'date'):
+                        data_envio = item.data_envio.date()
+                    else:
+                        data_envio = item.data_envio
+                    
+                    days_in_repair = (datetime.now().date() - data_envio).days
                 
                 return render_template('editar_pm05.html', 
                                      item=item,

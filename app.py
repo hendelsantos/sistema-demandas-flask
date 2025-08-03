@@ -142,6 +142,15 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+# Context processor para disponibilizar variáveis globais nos templates
+@app.context_processor
+def inject_user():
+    """Injeta informações do usuário atual nos templates"""
+    current_user = None
+    if 'user_id' in session:
+        current_user = Usuario.query.get(session['user_id'])
+    return dict(current_user=current_user)
+
 # Rotas principais
 @app.route('/')
 def index():

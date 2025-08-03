@@ -494,7 +494,7 @@
                             <div class="info-label">
                                 <i class="fas fa-calendar-alt"></i> Data de Envio
                             </div>
-                            <div class="info-value">{{ item.data_envio.strftime('%d/%m/%Y') }}</div>
+                            <div class="info-value">{{ format_date(item.data_envio) }}</div>
                         </div>
                         {% endif %}
                         
@@ -503,7 +503,7 @@
                             <div class="info-label">
                                 <i class="fas fa-calendar-check"></i> Data de Retorno
                             </div>
-                            <div class="info-value">{{ item.data_retorno.strftime('%d/%m/%Y') }}</div>
+                            <div class="info-value">{{ format_date(item.data_retorno) if item.data_retorno else 'N/A' }}</div>
                         </div>
                         {% endif %}
                         
@@ -575,7 +575,7 @@
                 <div class="timeline">
                     <div class="timeline-item completed">
                         <div class="timeline-content">
-                            <div class="timeline-date">{{ item.data_criacao.strftime('%d/%m/%Y às %H:%M') if item.data_criacao else 'N/A' }}</div>
+                            <div class="timeline-date">{{ format_datetime(item.data_criacao) if item.data_criacao else 'N/A' }}</div>
                             <div class="timeline-title">Item PM05 Criado</div>
                             <div class="timeline-description">
                                 Item {{ item.numero_pm05 }} foi registrado no sistema para reparo em {{ item.fornecedor }}
@@ -586,7 +586,7 @@
                     {% if item.data_envio %}
                     <div class="timeline-item {{ 'completed' if item.status == 'FINALIZADO' else 'warning' }}">
                         <div class="timeline-content">
-                            <div class="timeline-date">{{ item.data_envio.strftime('%d/%m/%Y') }}</div>
+                            <div class="timeline-date">{{ format_date(item.data_envio) }}</div>
                             <div class="timeline-title">Equipamento Enviado</div>
                             <div class="timeline-description">
                                 Equipamento enviado para reparo no fornecedor {{ item.fornecedor }}
@@ -599,7 +599,7 @@
                     {% if item.status == 'FINALIZADO' and item.data_retorno %}
                     <div class="timeline-item completed">
                         <div class="timeline-content">
-                            <div class="timeline-date">{{ item.data_retorno.strftime('%d/%m/%Y') }}</div>
+                            <div class="timeline-date">{{ format_date(item.data_retorno) if item.data_retorno else 'N/A' }}</div>
                             <div class="timeline-title">Equipamento Retornado</div>
                             <div class="timeline-description">
                                 Equipamento retornado do reparo e recebido
