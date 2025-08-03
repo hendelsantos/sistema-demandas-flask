@@ -149,12 +149,12 @@
                             {% for solicitante_data in relatorio.top_solicitantes %}
                             <tr>
                                 <td>{{ loop.index }}</td>
-                                <td>{{ solicitante_data[0] }}</td>
-                                <td>{{ solicitante_data[1] }}</td>
-                                <td>R$ {{ "%.2f"|format(solicitante_data[2] or 0) }}</td>
+                                <td>{{ solicitante_data.solicitante }}</td>
+                                <td>{{ solicitante_data.total_demandas }}</td>
+                                <td>R$ {{ "%.2f"|format(solicitante_data.valor_total or 0) }}</td>
                                 <td>
-                                    {% if solicitante_data[1] > 0 %}
-                                        R$ {{ "%.2f"|format((solicitante_data[2] or 0) / solicitante_data[1]) }}
+                                    {% if solicitante_data.total_demandas > 0 %}
+                                        R$ {{ "%.2f"|format((solicitante_data.valor_total or 0) / solicitante_data.total_demandas) }}
                                     {% else %}
                                         R$ 0,00
                                     {% endif %}
@@ -353,9 +353,9 @@
     const valoresPorMes = new Array(12).fill(0);
     
     performanceData.forEach(item => {
-        const mesIndex = item[0] - 1; // Converter 1-12 para 0-11
-        demandasPorMes[mesIndex] = item[1] || 0;
-        valoresPorMes[mesIndex] = item[2] || 0;
+        const mesIndex = item.mes - 1; // Converter 1-12 para 0-11
+        demandasPorMes[mesIndex] = item.total_demandas || 0;
+        valoresPorMes[mesIndex] = item.valor_orcado || 0;
     });
     
     const ctxPerformance = document.getElementById('performanceChart').getContext('2d');

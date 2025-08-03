@@ -620,13 +620,16 @@ def relatorio_fechamento_anual(ano):
     economia_gerada = valor_total_orcado - valor_total_realizado
     
     # Demandas por status
-    demandas_por_status = db.session.query(
+    demandas_por_status_raw = db.session.query(
         Demanda.status,
         func.count(Demanda.id).label('total')
     ).filter(Demanda.ano_orcamentario == ano).group_by(Demanda.status).all()
     
+    # Converter para dicionário serializável
+    demandas_por_status = {row[0]: row[1] for row in demandas_por_status_raw}
+    
     # Top solicitantes
-    top_solicitantes = db.session.query(
+    top_solicitantes_raw = db.session.query(
         Demanda.solicitante,
         func.count(Demanda.id).label('total_demandas'),
         func.sum(Pedido.valor_total).label('valor_total')
@@ -634,14 +637,34 @@ def relatorio_fechamento_anual(ano):
         Demanda.ano_orcamentario == ano
     ).group_by(Demanda.solicitante).order_by(func.count(Demanda.id).desc()).limit(10).all()
     
+    # Converter para lista de dicionários serializáveis
+    top_solicitantes = [
+        {
+            'solicitante': row[0],
+            'total_demandas': row[1],
+            'valor_total': float(row[2]) if row[2] else 0.0
+        }
+        for row in top_solicitantes_raw
+    ]
+    
     # Performance mensal
-    performance_mensal = db.session.query(
+    performance_mensal_raw = db.session.query(
         extract('month', Demanda.data_criacao).label('mes'),
         func.count(Demanda.id).label('total_demandas'),
         func.sum(Pedido.valor_total).label('valor_orcado')
     ).join(Pedido, Demanda.id == Pedido.demanda_id, isouter=True).filter(
         Demanda.ano_orcamentario == ano
     ).group_by('mes').order_by('mes').all()
+    
+    # Converter para lista de dicionários serializáveis
+    performance_mensal = [
+        {
+            'mes': int(row[0]) if row[0] else 0,
+            'total_demandas': row[1],
+            'valor_orcado': float(row[2]) if row[2] else 0.0
+        }
+        for row in performance_mensal_raw
+    ]
     
     # Demandas que ficaram pendentes
     demandas_pendentes_lista = Demanda.query.filter(
@@ -662,7 +685,7 @@ def relatorio_fechamento_anual(ano):
             'economia_gerada': economia_gerada,
             'percentual_economia': round((economia_gerada / valor_total_orcado * 100) if valor_total_orcado > 0 else 0, 1)
         },
-        'demandas_por_status': dict(demandas_por_status),
+        'demandas_por_status': demandas_por_status,
         'top_solicitantes': top_solicitantes,
         'performance_mensal': performance_mensal,
         'demandas_pendentes_lista': demandas_pendentes_lista
