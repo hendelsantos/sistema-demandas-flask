@@ -5,6 +5,7 @@ Mini rede social integrada ao sistema principal
 
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from werkzeug.utils import secure_filename
+from sqlalchemy import text
 import os
 from datetime import datetime
 import uuid
@@ -197,6 +198,9 @@ def registrar_rotas_rede_social(app, db):
     criar_tabelas_rede_social(db)
     criar_diretorio_uploads()
     
+    # Importar Usuario dentro da função para evitar problemas de contexto
+    from app import Usuario
+    
     @app.route('/rede-social')
     def rede_social():
         """Página principal da rede social"""
@@ -240,7 +244,8 @@ def registrar_rotas_rede_social(app, db):
                 file = request.files['imagem']
                 if file and file.filename != '':
                     if allowed_file(file.filename):
-                        if get_file_size(file) <= MAX_FILE_SIZE:
+                        file_size = get_file_size(file)
+                        if file_size <= MAX_FILE_SIZE:
                             # Gerar nome único para o arquivo
                             filename = secure_filename(file.filename)
                             unique_filename = f"{uuid.uuid4()}_{filename}"
@@ -344,3 +349,157 @@ def registrar_rotas_rede_social(app, db):
         except Exception as e:
             print(f"Erro ao comentar: {e}")
             return jsonify({'error': 'Erro interno do servidor'}), 500
+    
+    @app.route('/rede-social/deletar/<int:post_id>', methods=['POST'])
+    def deletar_post(post_id):
+        """Deleta um post - Apenas para admins"""
+        try:
+            print(f"DEBUG DELETE: Tentativa de deletar post {post_id}")
+            
+            # Verificar se o usuário é admin usando conexão direta ao banco
+            from flask import session
+            
+            if 'user_id' not in session:
+                print(f"DEBUG DELETE: Usuário não logado")
+                return jsonify({'error': 'Acesso negado. Faça login para continuar.'}), 403
+            
+            user_id = session['user_id']
+            print(f"DEBUG DELETE: user_id: {user_id}")
+            
+            # Verificar se é admin direto no banco
+            with db.engine.connect() as conn:
+                result = conn.execute(text("""
+                    SELECT is_admin FROM usuario WHERE id = :user_id
+                """), {"user_id": user_id})
+                
+                user_row = result.fetchone()
+                if not user_row or not user_row[0]:
+                    print(f"DEBUG DELETE: Acesso negado - não é admin ou usuário não encontrado")
+                    return jsonify({'error': 'Acesso negado. Apenas administradores podem deletar posts.'}), 403
+                
+                print(f"DEBUG DELETE: Usuário é admin, prosseguindo com delete")
+                
+                # Buscar informações do post para deletar imagem se existir
+                result = conn.execute(text("""
+                    SELECT imagem FROM posts_social WHERE id = :post_id
+                """), {"post_id": post_id})
+                
+                row = result.fetchone()
+                if not row:
+                    print(f"DEBUG DELETE: Post {post_id} não encontrado")
+                    return jsonify({'error': 'Post não encontrado'}), 404
+                
+                imagem_filename = row[0]
+                print(f"DEBUG DELETE: Post encontrado, imagem: {imagem_filename}")
+                
+                # Deletar comentários do post primeiro
+                conn.execute(text("""
+                    DELETE FROM comentarios_social WHERE post_id = :post_id
+                """), {"post_id": post_id})
+                
+                # Deletar curtidas do post
+                conn.execute(text("""
+                    DELETE FROM curtidas_social WHERE post_id = :post_id
+                """), {"post_id": post_id})
+                
+                # Deletar o post
+                conn.execute(text("""
+                    DELETE FROM posts_social WHERE id = :post_id
+                """), {"post_id": post_id})
+                
+                conn.commit()
+                print(f"DEBUG DELETE: Post {post_id} deletado do banco de dados")
+                
+                # Deletar arquivo de imagem se existir
+                if imagem_filename:
+                    try:
+                        file_path = os.path.join(UPLOAD_FOLDER_SOCIAL, imagem_filename)
+                        if os.path.exists(file_path):
+                            os.remove(file_path)
+                            print(f"DEBUG DELETE: Imagem {imagem_filename} deletada")
+                        else:
+                            print(f"DEBUG DELETE: Arquivo de imagem não existe: {file_path}")
+                    except Exception as e:
+                        print(f"Erro ao deletar imagem: {e}")
+                
+                print(f"DEBUG DELETE: Operação concluída com sucesso")
+                return redirect(url_for('rede_social'))
+                
+        except Exception as e:
+            print(f"Erro ao deletar post: {e}")
+            import traceback
+            print(f"DEBUG DELETE: Traceback completo: {traceback.format_exc()}")
+            return jsonify({'error': 'Erro interno do servidor'}), 500
+    
+    @app.route('/rede-social/editar/<int:post_id>', methods=['GET', 'POST'])
+    def editar_post(post_id):
+        """Edita um post - Apenas para admins"""
+        try:
+            # Verificar se o usuário é admin usando SQL direto para evitar problemas de contexto
+            from flask import session
+            if 'user_id' not in session:
+                flash('Acesso negado. Faça login como administrador.', 'error')
+                return redirect(url_for('rede_social'))
+            
+            user_id = session['user_id']
+            
+            # Verificar se é admin e processar a requisição usando a mesma conexão
+            with db.engine.connect() as conn:
+                result = conn.execute(text("SELECT is_admin FROM usuario WHERE id = :user_id"), {"user_id": user_id})
+                user_row = result.fetchone()
+                
+                if not user_row or not user_row[0]:
+                    flash('Acesso negado. Apenas administradores podem editar posts.', 'error')
+                    return redirect(url_for('rede_social'))
+                
+                if request.method == 'GET':
+                    # Buscar dados do post para edição
+                    result = conn.execute(text("""
+                        SELECT id, nome_autor, conteudo, imagem, likes, data_postagem
+                        FROM posts_social WHERE id = :post_id
+                    """), {"post_id": post_id})
+                    
+                    row = result.fetchone()
+                    if not row:
+                        flash('Post não encontrado', 'error')
+                        return redirect(url_for('rede_social'))
+                    
+                    post = Post(
+                        id=row[0],
+                        nome_autor=row[1],
+                        conteudo=row[2],
+                        imagem=row[3],
+                        likes=row[4],
+                        data_postagem=datetime.fromisoformat(row[5]) if isinstance(row[5], str) else row[5]
+                    )
+                    
+                    return render_template('editar_post.html', post=post)
+                
+                elif request.method == 'POST':
+                    # Atualizar post
+                    novo_conteudo = request.form.get('conteudo', '').strip()
+                    
+                    if not novo_conteudo:
+                        return jsonify({'error': 'Conteúdo é obrigatório'}), 400
+                    
+                    if len(novo_conteudo) > 280:
+                        return jsonify({'error': 'Conteúdo muito longo (máximo 280 caracteres)'}), 400
+                    
+                    # Atualizar no banco
+                    conn.execute(text("""
+                        UPDATE posts_social 
+                        SET conteudo = :conteudo
+                        WHERE id = :post_id
+                    """), {"conteudo": novo_conteudo, "post_id": post_id})
+                    
+                    conn.commit()
+                    
+                    return jsonify({'success': True})
+                
+        except Exception as e:
+            print(f"Erro ao editar post: {e}")
+            if request.method == 'POST':
+                return jsonify({'error': 'Erro interno do servidor'}), 500
+            else:
+                flash('Erro ao carregar post para edição', 'error')
+                return redirect(url_for('rede_social'))
