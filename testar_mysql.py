@@ -9,7 +9,7 @@ MYSQL_CONFIG = {
     'host': 'localhost',
     'port': 3306,
     'user': 'root',
-    'password': '',  # COLOQUE SUA SENHA AQUI!
+    'password': '',  # TESTANDO SEM SENHA
     'charset': 'utf8mb4'
 }
 
@@ -17,11 +17,6 @@ def testar_conexao():
     """Testa conexão com MySQL"""
     print("🔍 Testando conexão MySQL...")
     print("=" * 40)
-    
-    # Verificar senha
-    if not MYSQL_CONFIG['password']:
-        print("❌ Configure a senha no script!")
-        return False
     
     try:
         # Testar conexão

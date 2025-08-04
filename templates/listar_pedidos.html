@@ -75,22 +75,24 @@
                                     <span class="badge bg-warning text-dark">Pendente</span>
                                 {% endif %}
                             </td>
-                            <td>
-                                <div class="btn-group btn-group-sm" role="group">
+                                                        <td>
+                                <div class="btn-group" role="group">
                                     <a href="{{ url_for('detalhes_demanda', id=pedido.demanda.id) }}" 
                                        class="btn btn-outline-primary" title="Ver Demanda">
                                         <i class="fas fa-eye"></i>
                                     </a>
-                                    {% if not pedido.data_recebimento %}
-                                        <button type="button" class="btn btn-outline-success" 
-                                                onclick="confirmarRecebimento({{ pedido.id }})" title="Confirmar Recebimento">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                    {% elif pedido.data_recebimento and not pedido.data_recebimento_nf %}
-                                        <button type="button" class="btn btn-outline-dark" 
-                                                onclick="confirmarRecebimentoNF({{ pedido.id }})" title="Confirmar Recebimento NF">
-                                            <i class="fas fa-receipt"></i>
-                                        </button>
+                                    {% if session.user_id and session.is_admin %}
+                                        {% if not pedido.data_recebimento %}
+                                            <button type="button" class="btn btn-outline-success" 
+                                                    onclick="confirmarRecebimento({{ pedido.id }})" title="Confirmar Recebimento">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        {% elif pedido.data_recebimento and not pedido.data_recebimento_nf %}
+                                            <button type="button" class="btn btn-outline-dark" 
+                                                    onclick="confirmarRecebimentoNF({{ pedido.id }})" title="Confirmar Recebimento NF">
+                                                <i class="fas fa-receipt"></i>
+                                            </button>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </td>

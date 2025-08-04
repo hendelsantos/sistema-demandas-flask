@@ -12,7 +12,7 @@ MYSQL_CONFIG = {
     'host': 'localhost',
     'port': 3306,
     'user': 'root',
-    'password': '',  # COLOQUE SUA SENHA AQUI!
+    'password': 'admin123',  # SENHA CONFIGURADA!
     'database': 'sistema_demandas',
     'charset': 'utf8mb4'
 }
