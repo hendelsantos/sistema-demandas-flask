@@ -1,0 +1,26 @@
+🔄 MIGRAÇÃO RÁPIDA PARA MYSQL
+================================
+
+📋 CHECKLIST RÁPIDO:
+
+□ 1. MySQL instalado e rodando
+□ 2. Senha do MySQL em mãos  
+□ 3. Backup do SQLite feito
+
+🚀 PASSOS RÁPIDOS:
+
+1️⃣ TESTE A CONEXÃO:
+   - Edite: testar_mysql.py (linha 9)
+   - Execute: python testar_mysql.py
+
+2️⃣ EXECUTE A MIGRAÇÃO:
+   - Edite: migrar_sqlite_mysql.py (linha 13)
+   - Execute: python migrar_sqlite_mysql.py
+
+3️⃣ CONFIGURE A APLICAÇÃO:
+   - Edite: .env (MYSQL_PASSWORD)
+   - Execute: python app.py
+
+🎉 PRONTO! Seu sistema está no MySQL!
+
+❓ PROBLEMAS? Leia: MIGRACAO_MYSQL.md

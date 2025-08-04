@@ -8,6 +8,14 @@ import os
 from datetime import datetime
 import uuid
 from sqlalchemy import func, extract
+from dotenv import load_dotenv
+import pymysql
+
+# Instalar PyMySQL como MySQLdb
+pymysql.install_as_MySQLdb()
+
+# Carregar variáveis de ambiente
+load_dotenv()
 
 # Importar módulo da rede social
 from rede_social import registrar_rotas_rede_social
@@ -19,8 +27,24 @@ from pm05 import registrar_rotas_pm05
 from gi import registrar_rotas_gi
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'sua-chave-secreta-aqui'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
+
+# Configuração do banco de dados
+if os.getenv('MYSQL_HOST'):
+    # Configuração MySQL
+    mysql_user = os.getenv('MYSQL_USER', 'root')
+    mysql_password = os.getenv('MYSQL_PASSWORD', '')
+    mysql_host = os.getenv('MYSQL_HOST', 'localhost')
+    mysql_port = os.getenv('MYSQL_PORT', '3306')
+    mysql_database = os.getenv('MYSQL_DATABASE', 'sistema_demandas')
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_database}?charset=utf8mb4'
+    print("🔗 Conectando ao MySQL...")
+else:
+    # Fallback para SQLite
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
+    print("🔗 Conectando ao SQLite...")
+
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'sua-chave-secreta-aqui')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['UPLOAD_FOLDER'] = 'uploads'
 
