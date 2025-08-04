@@ -15,6 +15,9 @@ from rede_social import registrar_rotas_rede_social
 # Importar módulo PM05
 from pm05 import registrar_rotas_pm05
 
+# Importar módulo GI
+from gi import registrar_rotas_gi
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'sua-chave-secreta-aqui'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
@@ -822,6 +825,10 @@ with app.app_context():
 # Registrar rotas do PM05
 with app.app_context():
     registrar_rotas_pm05(app, db)
+
+# Registrar rotas do GI
+with app.app_context():
+    registrar_rotas_gi(app, db)
 
 if __name__ == '__main__':
     with app.app_context():

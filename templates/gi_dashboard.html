@@ -1,0 +1,372 @@
+{% extends "base.html" %}
+
+{% block title %}GI - Indicadores de GI{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-chart-line text-primary"></i> GI - Indicadores de GI</h2>
+                <div class="text-end">
+                    <span class="badge bg-primary fs-6">Semana Atual: {{ semana_atual }}</span>
+                    <div class="btn-group" role="group">
+                        <select class="form-select" id="filtroAno" onchange="filtrarPorAno()" style="width: auto;">
+                            <option value="2024" {% if ano_atual == 2024 %}selected{% endif %}>2024</option>
+                            <option value="2025" {% if ano_atual == 2025 %}selected{% endif %}>2025</option>
+                            <option value="2026" {% if ano_atual == 2026 %}selected{% endif %}>2026</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Realizado</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.total_realizado) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x"></i>
+                        </div>
+                    </div>
+                    <small>{{ stats.percentual_realizado }}% do total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Pendente</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.total_pendente) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-clock fa-2x"></i>
+                        </div>
+                    </div>
+                    <small>{{ stats.percentual_pendente }}% do total</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Total Geral</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.total_geral) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-chart-bar fa-2x"></i>
+                        </div>
+                    </div>
+                    <small>{{ stats.total_semanas }} semanas registradas</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title">Média Semanal</h6>
+                            <h4 class="mb-0">{{ "%.1f"|format(stats.media_realizado + stats.media_pendente) }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-calculator fa-2x"></i>
+                        </div>
+                    </div>
+                    <small>Real: {{ "%.1f"|format(stats.media_realizado) }} | Pend: {{ "%.1f"|format(stats.media_pendente) }}</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário de Entrada de Dados (apenas para admin e só se for ano atual) -->
+    {% if current_user and current_user.is_admin and ano_atual == ano_real %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-edit"></i> Inserir/Atualizar Dados GI - {{ ano_atual }}</h5>
+                </div>
+                <div class="card-body">
+                    <form id="formGI" onsubmit="event.preventDefault(); salvarDadosGI();">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="numero_semana" class="form-label">Semana</label>
+                                    <input type="number" class="form-control" id="numero_semana" name="numero_semana" 
+                                           min="1" max="53" value="{{ semana_atual }}" required>
+                                    <small class="form-text text-muted">Semana atual: {{ semana_atual }}</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="gi_realizado" class="form-label">GI Realizado</label>
+                                    <input type="number" class="form-control" id="gi_realizado" name="gi_realizado" 
+                                           step="0.1" min="0" value="{{ registro_atual.gi_realizado if registro_atual else 0 }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="gi_pendente" class="form-label">GI Pendente</label>
+                                    <input type="number" class="form-control" id="gi_pendente" name="gi_pendente" 
+                                           step="0.1" min="0" value="{{ registro_atual.gi_pendente if registro_atual else 0 }}" required>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label for="ano" class="form-label">Ano</label>
+                                    <input type="number" class="form-control" id="ano" name="ano" 
+                                           min="2020" max="2030" value="{{ ano_atual }}" required>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Salvar Dados
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="limparFormulario()">
+                                    <i class="fas fa-eraser"></i> Limpar
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alerta para anos não atuais -->
+    {% if ano_atual != ano_real %}
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> 
+                <strong>Visualizando dados de {{ ano_atual }}.</strong> 
+                {% if current_user and current_user.is_admin %}
+                Para inserir novos dados, acesse o <a href="/gi?ano={{ ano_real }}" class="alert-link">ano atual ({{ ano_real }})</a>.
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Tabela de Dados -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-table"></i> Dados por Semana - {{ ano_atual }}</h5>
+                </div>
+                <div class="card-body">
+                    {% if dados_gi %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Semana</th>
+                                    <th>GI Realizado</th>
+                                    <th>GI Pendente</th>
+                                    <th>Total</th>
+                                    <th>% Realizado</th>
+                                    <th>% Pendente</th>
+                                    <th>Última Atualização</th>
+                                    {% if current_user and current_user.is_admin %}
+                                    <th>Ações</th>
+                                    {% endif %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for gi in dados_gi %}
+                                <tr {% if gi.numero_semana == semana_atual %}class="table-warning"{% endif %}>
+                                    <td>
+                                        <strong>{{ gi.numero_semana }}</strong>
+                                        {% if gi.numero_semana == semana_atual %}
+                                        <span class="badge bg-primary ms-1">Atual</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-success">
+                                        <strong>{{ "%.1f"|format(gi.gi_realizado) }}</strong>
+                                    </td>
+                                    <td class="text-warning">
+                                        <strong>{{ "%.1f"|format(gi.gi_pendente) }}</strong>
+                                    </td>
+                                    <td class="text-primary">
+                                        <strong>{{ "%.1f"|format(gi.total) }}</strong>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-success" role="progressbar" 
+                                                 style="width: {{ gi.percentual_realizado }}%">
+                                                {{ gi.percentual_realizado }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar bg-warning" role="progressbar" 
+                                                 style="width: {{ gi.percentual_pendente }}%">
+                                                {{ gi.percentual_pendente }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-muted">
+                                        <small>
+                                            {% if gi.data_atualizacao %}
+                                                {{ gi.data_atualizacao.strftime('%d/%m/%Y %H:%M') if gi.data_atualizacao.strftime else gi.data_atualizacao }}
+                                            {% else %}
+                                                {{ gi.data_criacao.strftime('%d/%m/%Y %H:%M') if gi.data_criacao.strftime else gi.data_criacao }}
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    {% if current_user and current_user.is_admin %}
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                onclick="editarRegistro({{ gi.numero_semana }}, {{ gi.gi_realizado }}, {{ gi.gi_pendente }}, {{ gi.ano }})">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="confirmarDelete({{ gi.id }}, {{ gi.numero_semana }})">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </td>
+                                    {% endif %}
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="fas fa-chart-line fa-4x text-muted mb-3"></i>
+                        <h5 class="text-muted">Nenhum dado encontrado</h5>
+                        <p class="text-muted">
+                            {% if current_user and current_user.is_admin %}
+                            Use o formulário acima para inserir os primeiros dados.
+                            {% else %}
+                            Entre em contato com um administrador para inserir dados.
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Exclusão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir os dados da <strong>Semana <span id="semanaDelete"></span></strong>?</p>
+                <p class="text-danger"><small>Esta ação não pode ser desfeita.</small></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="formDelete" method="POST" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Confirmar Exclusão</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Função para filtrar por ano
+function filtrarPorAno() {
+    const ano = document.getElementById('filtroAno').value;
+    window.location.href = `/gi?ano=${ano}`;
+}
+
+// Funções JavaScript para interação
+function salvarDadosGI() {
+    const form = document.getElementById('formGI');
+    const formData = new FormData(form);
+    
+    fetch('/gi/atualizar', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Dados salvos com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar dados.');
+    });
+}
+
+function editarRegistro(semana, realizado, pendente, ano) {
+    document.getElementById('numero_semana').value = semana;
+    document.getElementById('gi_realizado').value = realizado;
+    document.getElementById('gi_pendente').value = pendente;
+    document.getElementById('ano').value = ano;
+    
+    // Scroll para o formulário
+    document.getElementById('formGI').scrollIntoView({ behavior: 'smooth' });
+}
+
+function limparFormulario() {
+    document.getElementById('numero_semana').value = {{ semana_atual }};
+    document.getElementById('gi_realizado').value = 0;
+    document.getElementById('gi_pendente').value = 0;
+    document.getElementById('ano').value = {{ ano_atual }};
+}
+
+function confirmarDelete(id, semana) {
+    document.getElementById('semanaDelete').textContent = semana;
+    document.getElementById('formDelete').action = `/gi/deletar/${id}`;
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Atualizar número da semana automaticamente
+document.addEventListener('DOMContentLoaded', function() {
+    // Destacar semana atual na tabela
+    const semanaAtual = {{ semana_atual }};
+    
+    // Função para atualizar indicador de semana atual (executar a cada minuto)
+    function atualizarSemanaAtual() {
+        fetch('/gi/semana-atual')
+            .then(response => response.json())
+            .then(data => {
+                if (data.semana_atual !== semanaAtual) {
+                    // Se a semana mudou, mostrar notificação
+                    if (confirm('A semana atual mudou! Deseja recarregar a página para ver os dados atualizados?')) {
+                        location.reload();
+                    }
+                }
+            })
+            .catch(error => console.log('Erro ao verificar semana atual:', error));
+    }
+    
+    // Verificar mudança de semana a cada 60 segundos
+    setInterval(atualizarSemanaAtual, 60000);
+});
+</script>
+{% endblock %}
