@@ -1,32 +1,385 @@
-# Sistema de Controle de Demandas
+# 🚀 Sistema de Demandas Flask
 
-Um sistema completo para gerenciamento de demandas de compra com controle de status, documentos e métricas financeiras.
+Sistema completo de gestão de demandas, pedidos e indicadores desenvolvido em Flask com interface moderna e responsiva.
 
-## Funcionalidades
+## 📋 Visão Geral
 
-### 📋 Gestão de Demandas
+Este sistema oferece uma solução completa para gestão empresarial com os seguintes módulos:
+
+- 🎯 **Demandas**: Controle de solicitações e cotações
+- 🛒 **Pedidos**: Gestão de pedidos e faturamento  
+- 🌐 **Rede Social**: Posts e comunicação interna
+- 📊 **PM05**: Indicadores de performance
+- 📈 **GI**: Gestão de indicadores semanais
+- 👥 **Usuários**: Sistema de autenticação e permissões
+
+## ✨ Funcionalidades
+
+### 🔐 Sistema de Autenticação
+- Login/logout de usuários
+- Controle de permissões (admin/usuário)
+- Usuário admin padrão incluído
+
+### 📊 Dashboard Interativo
+- Cards de estatísticas
+- Gráficos e métricas em tempo real
+- Filtros por ano e período
+- Interface responsiva
+
+### 🎨 Interface Moderna
+- Design Bootstrap 5
+- PWA (Progressive Web App)
+- Favicon personalizado
+- Tema escuro/claro
+
+### 📱 Recursos Técnicos
+- SQLite/MySQL suportados
+- Migrations automáticas
+- Upload de arquivos
+- API RESTful
+
+## 🛠️ Tecnologias
+
+- **Backend**: Flask 2.3.3, SQLAlchemy
+- **Frontend**: Bootstrap 5, Font Awesome, JavaScript
+- **Banco**: SQLite (padrão) / MySQL (produção)
+- **Deploy**: Python 3.8+
+
+## 📦 Instalação
+
+### 1. Clone o Repositório
+```bash
+git clone https://github.com/hendelsantos/sistema-demandas-flask.git
+cd sistema-demandas-flask
+```
+
+### 2. Ambiente Virtual
+```bash
+# Criar ambiente virtual
+python -m venv venv
+
+# Ativar ambiente virtual
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+```
+
+### 3. Instalar Dependências
+```bash
+pip install -r requirements.txt
+```
+
+## 🚀 Execução Rápida (SQLite)
+
+### 1. Inicializar Banco
+```bash
+# Criar usuário admin
+python criar_admin.py
+
+# Executar aplicação
+python app.py
+```
+
+### 2. Acessar Sistema
+- **URL**: http://localhost:5000
+- **Admin**: admin / admin123
+- **Público**: Alguns módulos acessíveis sem login
+
+## 🐬 Configuração MySQL (Produção)
+
+### 1. Instalar MySQL
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install mysql-server
+
+# CentOS/RHEL
+sudo yum install mysql-server
+
+# Iniciar serviço
+sudo systemctl start mysql
+sudo systemctl enable mysql
+```
+
+### 2. Configurar Banco
+```sql
+# Conectar como root
+mysql -u root -p
+
+# Criar banco
+CREATE DATABASE sistema_demandas CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+# Criar usuário (opcional)
+CREATE USER 'app_user'@'localhost' IDENTIFIED BY 'senha_segura';
+GRANT ALL PRIVILEGES ON sistema_demandas.* TO 'app_user'@'localhost';
+FLUSH PRIVILEGES;
+EXIT;
+```
+
+### 3. Configurar Credenciais
+Edite o arquivo `migrar_sqlite_mysql.py`:
+```python
+MYSQL_CONFIG = {
+    'host': 'localhost',
+    'port': 3306,
+    'user': 'root',              # Seu usuário
+    'password': 'sua_senha',     # Sua senha
+    'database': 'sistema_demandas',
+    'charset': 'utf8mb4'
+}
+```
+
+### 4. Migração Automática
+```bash
+# Testar conexão
+python testar_mysql.py
+
+# Migrar dados do SQLite para MySQL
+python migrar_sqlite_mysql.py
+```
+
+### 5. Ativar MySQL no App
+Edite `app.py` e descomente as linhas MySQL:
+```python
+# Comentar SQLite
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
+
+# Descomentar MySQL
+if os.getenv('MYSQL_HOST'):
+    mysql_user = os.getenv('MYSQL_USER', 'root')
+    mysql_password = os.getenv('MYSQL_PASSWORD', '')
+    mysql_host = os.getenv('MYSQL_HOST', 'localhost')
+    mysql_port = os.getenv('MYSQL_PORT', '3306')
+    mysql_database = os.getenv('MYSQL_DATABASE', 'sistema_demandas')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'mysql+pymysql://{mysql_user}:{mysql_password}@{mysql_host}:{mysql_port}/{mysql_database}?charset=utf8mb4'
+    print("🔗 Conectando ao MySQL...")
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///demandas.db'
+    print("🔗 Conectando ao SQLite...")
+```
+
+### 6. Configurar Variáveis de Ambiente
+Crie o arquivo `.env`:
+```env
+# MySQL
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=sua_senha
+MYSQL_DATABASE=sistema_demandas
+
+# Aplicação
+SECRET_KEY=sua-chave-secreta-super-segura
+FLASK_ENV=production
+FLASK_DEBUG=False
+```
+
+### 7. Executar com MySQL
+```bash
+python app.py
+```
+
+## 🔧 Configuração de Servidor
+
+### Nginx (Recomendado)
+```nginx
+server {
+    listen 80;
+    server_name seu-dominio.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+```
+
+### Gunicorn (Produção)
+```bash
+# Instalar Gunicorn
+pip install gunicorn
+
+# Executar
+gunicorn -w 4 -b 0.0.0.0:5000 app:app
+```
+
+### Systemd Service
+```ini
+[Unit]
+Description=Sistema Demandas Flask
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/path/to/app
+Environment="PATH=/path/to/app/venv/bin"
+ExecStart=/path/to/app/venv/bin/gunicorn -w 4 -b 127.0.0.1:5000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+```
+
+## 📊 Estrutura do Banco
+
+### Tabelas Principais
+- `demanda` - Demandas e cotações
+- `pedido` - Pedidos e faturamento
+- `usuario` - Usuários e permissões
+- `post_rede_social` - Posts da rede social
+- `pm05` - Indicadores PM05
+- `gi_indicadores` - Indicadores GI semanais
+
+### Relacionamentos
+- Usuários têm permissões admin/user
+- Demandas geram pedidos
+- Posts pertencem a usuários
+- Indicadores são filtrados por ano
+
+## 🎯 Uso do Sistema
+
+### 🔐 Login
+1. Acesse http://localhost:5000/login
+2. Use: admin / admin123
+3. Ou crie novos usuários via admin
+
+### 📊 Dashboard
+- Visão geral de todos os módulos
+- Estatísticas em tempo real
+- Acesso rápido às funcionalidades
+
+### Módulos Detalhados
+
+#### 📋 Gestão de Demandas
 - **Cadastro de Demandas**: Solicitante, descrição, quantidade, catálogo, local de uso e justificativa
 - **Controle de Status**: 
   - Aberto → Em Cotação → PR Criada → PO Emitido
 - **Upload de Documentos**: Anexar PDFs (cotações, especificações, POs, notas fiscais)
 - **Timeline Visual**: Acompanhamento do fluxo do processo
 
-### 🛒 Gestão de Pedidos
+#### 🛒 Gestão de Pedidos
 - **Criação de Pedidos**: Vinculados às demandas com PO emitido
 - **Controle de Fornecedores**: Dados do fornecedor e número da PO
 - **Gestão de Recebimento**: Confirmação de recebimento com valores reais
 - **Notas Fiscais**: Controle de documentos fiscais
 
-### 📊 Métricas e Relatórios
+#### 📊 Métricas e Relatórios
 - **Previsões vs Recebido**: Comparativo mensal de valores
 - **Gráficos Interativos**: Visualização de dados financeiros
 - **Métricas em Tempo Real**: Dashboard com indicadores principais
 - **Projeções Futuras**: Previsões de recebimento por mês
 
-### 🎯 Dashboard
-- **Visão Geral**: Totalizadores por status
-- **Gráficos**: Status das demandas em pizza
-- **Ações Rápidas**: Acesso direto às funcionalidades principais
+#### 📈 Indicadores GI
+1. Inserir dados semanais
+2. Filtrar por ano
+3. Ver estatísticas
+4. Editar/excluir registros
+
+#### 🌐 Rede Social
+1. Criar posts
+2. Editar/excluir (admin)
+3. Interação social
+4. Comunicação interna
+
+## 🔧 Desenvolvimento
+
+### Estrutura de Arquivos
+```
+sistema-demandas-flask/
+├── app.py                 # Aplicação principal
+├── gi.py                  # Módulo GI
+├── pm05.py               # Módulo PM05
+├── rede_social.py        # Módulo Rede Social
+├── criar_admin.py        # Script criar admin
+├── migrar_sqlite_mysql.py # Script migração
+├── requirements.txt      # Dependências
+├── templates/            # Templates HTML
+├── static/              # CSS, JS, imagens
+├── instance/            # Banco SQLite
+└── uploads/             # Arquivos enviados
+```
+
+### Comandos Úteis
+```bash
+# Instalar nova dependência
+pip install nome-pacote
+pip freeze > requirements.txt
+
+# Backup banco
+cp instance/demandas.db backup_$(date +%Y%m%d).db
+
+# Ver logs
+tail -f /var/log/nginx/access.log
+
+# Reiniciar serviço
+sudo systemctl restart nome-servico
+```
+
+## 🚨 Troubleshooting
+
+### Erro de Conexão MySQL
+```bash
+# Verificar se MySQL está rodando
+sudo systemctl status mysql
+
+# Testar conexão
+python testar_mysql.py
+
+# Verificar logs
+sudo tail -f /var/log/mysql/error.log
+```
+
+### Erro de Permissões
+```bash
+# Corrigir permissões uploads
+chmod 755 uploads/
+chown -R www-data:www-data uploads/
+
+# Corrigir banco SQLite
+chmod 664 instance/demandas.db
+chown www-data:www-data instance/demandas.db
+```
+
+### Erro de Dependências
+```bash
+# Reinstalar dependências
+pip uninstall -r requirements.txt -y
+pip install -r requirements.txt
+
+# Limpar cache
+pip cache purge
+```
+
+## 📞 Suporte
+
+### Logs da Aplicação
+- **SQLite**: Logs no terminal
+- **MySQL**: /var/log/mysql/
+- **Nginx**: /var/log/nginx/
+- **App**: Configurar logging no Flask
+
+### Contato
+- **Desenvolvedor**: Hendel Santos
+- **Email**: [seu-email@example.com]
+- **GitHub**: https://github.com/hendelsantos/sistema-demandas-flask
+
+## 📝 Licença
+
+Este projeto está sob a licença MIT. Veja o arquivo `LICENSE` para mais detalhes.
+
+## 🏆 Versão
+
+**Versão 1.02** - Sistema completo com todos os módulos funcionais
+
+---
+
+⭐ **Desenvolvido com ❤️ por Hendel Santos**
+- **Gráficos Interativos**: Visualização de dados financeiros
+- **Métricas em Tempo Real**: Dashboard com indicadores principais
+- **Projeções Futuras**: Previsões de recebimento por mês
 
 ## Tecnologias Utilizadas
 
